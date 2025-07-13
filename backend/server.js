@@ -56,32 +56,40 @@ app.use('/api/calls/webhook', rateLimits.webhooks);
 // Connect to MongoDB with enhanced error handling
 const connectDB = async () => {
   try {
-    const mongoURI =
-      process.env.MONGODB_URI || 'mongodb://localhost:27017/outbound-ai-mvp';
-    dbLogger.info('Attempting to connect to MongoDB...', { mongoURI: mongoURI.replace(/\/\/.*@/, '//***:***@') });
+    const mongoURI = process.env.MONGODB_URI;
+    
+    if (!mongoURI) {
+      throw new Error('MONGODB_URI environment variable is not set');
+    }
+    
+    dbLogger.info('Attempting to connect to MongoDB...', { 
+      mongoURI: mongoURI.replace(/\/\/.*@/, '//***:***@'),
+      environment: process.env.NODE_ENV || 'development'
+    });
 
     await mongoose.connect(mongoURI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
+      serverSelectionTimeoutMS: 10000, // Timeout after 10s
       socketTimeoutMS: 45000, // Close sockets after 45s of inactivity
       maxPoolSize: 10, // Maintain up to 10 socket connections
       heartbeatFrequencyMS: 10000, // Send a ping every 10s
+      retryWrites: true,
+      w: 'majority'
     });
 
     dbLogger.info('MongoDB connected successfully');
   } catch (error) {
     handleDatabaseError(error, {
       operation: 'connection',
-      mongoURI: (process.env.MONGODB_URI || 'mongodb://localhost:27017/outbound-ai-mvp').replace(/\/\/.*@/, '//***:***@')
+      mongoURI: process.env.MONGODB_URI ? process.env.MONGODB_URI.replace(/\/\/.*@/, '//***:***@') : 'NOT_SET'
     });
     
     dbLogger.info('Possible solutions:', {
       solutions: [
         'Check if your IP is whitelisted in MongoDB Atlas',
-        'Verify your MongoDB connection string in .env file',
+        'Verify your MongoDB connection string in Render environment variables',
         'Check if MongoDB Atlas cluster is running',
-        'Ensure network connectivity to MongoDB Atlas'
+        'Ensure network connectivity to MongoDB Atlas',
+        'Verify MongoDB Atlas username and password are correct'
       ]
     });
 
@@ -118,21 +126,49 @@ app.post('/api/workers/stop', asyncHandler(async (req, res) => {
 app.get('/health', asyncHandler(async (req, res) => {
   const healthStatus = getHealthStatus();
   const workerStatus = integratedWorkerService.getStatus();
-
-  res.status(healthStatus.status === 'healthy' ? 200 : 503).json({
+  
+  // Check MongoDB connection status
+  const mongoStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
+  
+  const response = {
     ...healthStatus,
     workers: workerStatus,
-  });
+    database: {
+      status: mongoStatus,
+      readyState: mongoose.connection.readyState
+    },
+    environment: process.env.NODE_ENV || 'development',
+    timestamp: new Date().toISOString()
+  };
+
+  // Return 503 if database is not connected in production
+  const statusCode = (process.env.NODE_ENV === 'production' && mongoStatus === 'disconnected') ? 503 : 200;
+  
+  res.status(statusCode).json(response);
 }));
 
 app.get('/api/health', asyncHandler(async (req, res) => {
   const healthStatus = getHealthStatus();
   const workerStatus = integratedWorkerService.getStatus();
-
-  res.status(healthStatus.status === 'healthy' ? 200 : 503).json({
+  
+  // Check MongoDB connection status
+  const mongoStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
+  
+  const response = {
     ...healthStatus,
     workers: workerStatus,
-  });
+    database: {
+      status: mongoStatus,
+      readyState: mongoose.connection.readyState
+    },
+    environment: process.env.NODE_ENV || 'development',
+    timestamp: new Date().toISOString()
+  };
+
+  // Return 503 if database is not connected in production
+  const statusCode = (process.env.NODE_ENV === 'production' && mongoStatus === 'disconnected') ? 503 : 200;
+  
+  res.status(statusCode).json(response);
 }));
 
 // Global error handling middleware
