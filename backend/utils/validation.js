@@ -18,8 +18,8 @@ const isStrongPassword = password => {
   return validator.isStrongPassword(password, {
     minLength: 6,
     minLowercase: 1,
-    minUppercase: 1,
-    minNumbers: 1,
+    minUppercase: 0, // Make uppercase optional
+    minNumbers: 0,   // Make numbers optional
     minSymbols: 0,
   });
 };
