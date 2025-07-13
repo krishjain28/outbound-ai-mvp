@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
 import { toast } from 'react-toastify';
+import { AxiosError as AxiosErrorType } from 'axios';
 import {
   PhoneIcon,
   PhoneXMarkIcon,
@@ -359,7 +360,7 @@ const CallPage: React.FC = () => {
           'API configuration incomplete. Please set up your Telnyx and OpenAI API keys.'
         );
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error checking config status:', error);
       setConfigError(
         'Unable to check API configuration. Please ensure the backend is running.'
@@ -449,9 +450,10 @@ const CallPage: React.FC = () => {
       setCurrentCall(response.data);
       setCallDuration(0);
       toast.success('Call initiated successfully!');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error initiating call:', error);
-      const errorData = error.response?.data;
+      const axiosError = error as AxiosErrorType;
+      const errorData = axiosError.response?.data as { message?: string; details?: string; error?: string } | undefined;
       let errorMessage = 'Failed to initiate call. Please try again.';
 
       if (errorData?.message) {
@@ -483,9 +485,11 @@ const CallPage: React.FC = () => {
       setCallDuration(0);
       await fetchRecentCalls();
       toast.success('Call ended');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error hanging up call:', error);
-      toast.error(error.response?.data?.message || 'Failed to hang up call');
+      const axiosError = error as AxiosErrorType;
+      const errorData = axiosError.response?.data as { message?: string } | undefined;
+      toast.error(errorData?.message || 'Failed to hang up call');
     } finally {
       setIsLoading(false);
     }

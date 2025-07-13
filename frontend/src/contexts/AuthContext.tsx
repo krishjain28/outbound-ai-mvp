@@ -13,6 +13,7 @@ import {
   LoginCredentials,
   RegisterCredentials,
 } from '../types/auth';
+import { AxiosError as AxiosErrorType } from 'axios';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -73,8 +74,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       } else {
         throw new Error(response.message || 'Login failed');
       }
-    } catch (error: any) {
-      const message = error.message || 'Login failed';
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Login failed';
       toast.error(message);
       throw error;
     } finally {
@@ -102,8 +103,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       } else {
         throw new Error(response.message || 'Registration failed');
       }
-    } catch (error: any) {
-      const message = error.message || 'Registration failed';
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Registration failed';
       toast.error(message);
       throw error;
     } finally {
@@ -144,8 +145,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       } else {
         throw new Error('Failed to update profile');
       }
-    } catch (error: any) {
-      const message = error.message || 'Failed to update profile';
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Failed to update profile';
       toast.error(message);
       throw error;
     } finally {

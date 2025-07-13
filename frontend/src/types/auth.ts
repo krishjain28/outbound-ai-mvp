@@ -1,3 +1,5 @@
+import { ApiError } from './api';
+
 export interface User {
   id: string;
   name: string;
@@ -16,7 +18,7 @@ export interface AuthResponse {
     user: User;
     token: string;
   };
-  errors?: any[];
+  errors?: ApiError[];
 }
 
 export interface LoginCredentials {
@@ -41,8 +43,4 @@ export interface AuthContextType {
   updateProfile: (data: Partial<User>) => Promise<void>;
 }
 
-export interface ApiError {
-  success: false;
-  message: string;
-  errors?: any[];
-}
+

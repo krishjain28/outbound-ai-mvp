@@ -2,6 +2,7 @@ const { createClient } = require('@deepgram/sdk');
 const { ElevenLabsClient } = require('@elevenlabs/elevenlabs-js');
 const WebSocket = require('ws');
 const axios = require('axios');
+const { speech: logger } = require('../utils/logger');
 
 class SpeechService {
   constructor() {
@@ -13,9 +14,9 @@ class SpeechService {
     ) {
       try {
         this.deepgram = createClient(process.env.DEEPGRAM_API_KEY);
-        console.log('✅ Deepgram client initialized successfully');
+        logger.info('Deepgram client initialized successfully');
       } catch (error) {
-        console.warn('⚠️ Failed to initialize Deepgram client:', error.message);
+        logger.warn('Failed to initialize Deepgram client', { error: error.message });
       }
     } else {
       console.warn(
@@ -33,7 +34,7 @@ class SpeechService {
         this.elevenlabs = new ElevenLabsClient({
           apiKey: process.env.ELEVENLABS_API_KEY,
         });
-        console.log('✅ ElevenLabs client initialized successfully');
+        logger.info('ElevenLabs client initialized successfully');
       } catch (error) {
         console.warn(
           '⚠️ Failed to initialize ElevenLabs client:',

@@ -2,6 +2,9 @@ const express = require('express');
 const mongoose = require('mongoose');
 require('dotenv').config();
 
+// Import logging utilities
+const { app: logger, database: dbLogger, worker: workerLogger } = require('./utils/logger');
+
 // Import production middleware
 const {
   productionSecurity,
@@ -49,7 +52,7 @@ const connectDB = async () => {
   try {
     const mongoURI =
       process.env.MONGODB_URI || 'mongodb://localhost:27017/outbound-ai-mvp';
-    console.log('Attempting to connect to MongoDB...');
+    dbLogger.info('Attempting to connect to MongoDB...', { mongoURI: mongoURI.replace(/\/\/.*@/, '//***:***@') });
 
     await mongoose.connect(mongoURI, {
       useNewUrlParser: true,
@@ -61,19 +64,23 @@ const connectDB = async () => {
       heartbeatFrequencyMS: 10000, // Send a ping every 10s
     });
 
-    console.log('✅ MongoDB connected successfully');
+    dbLogger.info('MongoDB connected successfully');
   } catch (error) {
-    console.error('❌ MongoDB connection error:', error.message);
-    console.error('📝 Possible solutions:');
-    console.error(
-      '   1. Check if your IP (160.202.36.102) is whitelisted in MongoDB Atlas'
-    );
-    console.error('   2. Verify your MongoDB connection string in .env file');
-    console.error('   3. Check if MongoDB Atlas cluster is running');
-    console.error('   4. Ensure network connectivity to MongoDB Atlas');
+    dbLogger.error('MongoDB connection error', { 
+      error: error.message,
+      stack: error.stack 
+    });
+    dbLogger.info('Possible solutions:', {
+      solutions: [
+        'Check if your IP is whitelisted in MongoDB Atlas',
+        'Verify your MongoDB connection string in .env file',
+        'Check if MongoDB Atlas cluster is running',
+        'Ensure network connectivity to MongoDB Atlas'
+      ]
+    });
 
     // Don't exit the process, let the app run without MongoDB for now
-    console.log('⚠️  Server will continue running without MongoDB connection');
+    dbLogger.warn('Server will continue running without MongoDB connection');
   }
 };
 
@@ -136,11 +143,15 @@ const PORT = process.env.PORT || 5001;
 const originalListen = app.listen;
 app.listen = function (port, callback) {
   const server = originalListen.call(this, port, () => {
-    console.log(`Server running on port ${port}`);
-    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    logger.info('Server started', { 
+      port, 
+      environment: process.env.NODE_ENV || 'development',
+      timestamp: new Date().toISOString()
+    });
 
     // Start integrated workers
     setTimeout(() => {
+      workerLogger.info('Starting integrated workers after server initialization delay');
       integratedWorkerService.start();
     }, 3000); // Wait 3 seconds for server to fully initialize
 
@@ -149,19 +160,21 @@ app.listen = function (port, callback) {
 
   // Graceful shutdown
   process.on('SIGTERM', () => {
-    console.log('🛑 Received SIGTERM, shutting down gracefully...');
+    logger.info('Received SIGTERM, shutting down gracefully...');
+    workerLogger.info('Stopping integrated workers due to SIGTERM');
     integratedWorkerService.stop();
     server.close(() => {
-      console.log('✅ Server closed');
+      logger.info('Server closed gracefully');
       process.exit(0);
     });
   });
 
   process.on('SIGINT', () => {
-    console.log('🛑 Received SIGINT, shutting down gracefully...');
+    logger.info('Received SIGINT, shutting down gracefully...');
+    workerLogger.info('Stopping integrated workers due to SIGINT');
     integratedWorkerService.stop();
     server.close(() => {
-      console.log('✅ Server closed');
+      logger.info('Server closed gracefully');
       process.exit(0);
     });
   });

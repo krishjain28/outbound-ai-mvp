@@ -1,13 +1,14 @@
-import axios from 'axios';
+import axios, { AxiosError as AxiosErrorType } from 'axios';
 import {
   AuthResponse,
   LoginCredentials,
   RegisterCredentials,
   User,
 } from '../types/auth';
+import { ApiErrorResponse, AxiosError } from '../types/api';
 
 const API_BASE_URL =
-  process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
+  process.env.REACT_APP_API_URL || 'https://outbound-ai.onrender.com/api';
 
 // Create axios instance
 const api = axios.create({
@@ -53,8 +54,9 @@ export const authAPI = {
     try {
       const response = await api.post('/auth/signup', credentials);
       return response.data;
-    } catch (error: any) {
-      throw error.response?.data || { message: 'Registration failed' };
+    } catch (error: unknown) {
+      const axiosError = error as AxiosErrorType;
+      throw axiosError.response?.data || { message: 'Registration failed' };
     }
   },
 
@@ -63,8 +65,9 @@ export const authAPI = {
     try {
       const response = await api.post('/auth/signin', credentials);
       return response.data;
-    } catch (error: any) {
-      throw error.response?.data || { message: 'Login failed' };
+    } catch (error: unknown) {
+      const axiosError = error as AxiosErrorType;
+      throw axiosError.response?.data || { message: 'Login failed' };
     }
   },
 
@@ -83,8 +86,9 @@ export const authAPI = {
     try {
       const response = await api.get('/auth/me');
       return response.data;
-    } catch (error: any) {
-      throw error.response?.data || { message: 'Failed to fetch profile' };
+    } catch (error: unknown) {
+      const axiosError = error as AxiosErrorType;
+      throw axiosError.response?.data || { message: 'Failed to fetch profile' };
     }
   },
 
@@ -95,8 +99,9 @@ export const authAPI = {
     try {
       const response = await api.put('/auth/profile', data);
       return response.data;
-    } catch (error: any) {
-      throw error.response?.data || { message: 'Failed to update profile' };
+    } catch (error: unknown) {
+      const axiosError = error as AxiosErrorType;
+      throw axiosError.response?.data || { message: 'Failed to update profile' };
     }
   },
 
@@ -109,8 +114,9 @@ export const authAPI = {
     try {
       const response = await api.put('/user/change-password', passwords);
       return response.data;
-    } catch (error: any) {
-      throw error.response?.data || { message: 'Failed to change password' };
+    } catch (error: unknown) {
+      const axiosError = error as AxiosErrorType;
+      throw axiosError.response?.data || { message: 'Failed to change password' };
     }
   },
 
@@ -119,9 +125,10 @@ export const authAPI = {
     try {
       const response = await api.get('/user/dashboard');
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const axiosError = error as AxiosErrorType;
       throw (
-        error.response?.data || { message: 'Failed to fetch dashboard data' }
+        axiosError.response?.data || { message: 'Failed to fetch dashboard data' }
       );
     }
   },

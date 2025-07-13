@@ -3,6 +3,7 @@ const { body, validationResult } = require('express-validator');
 const rateLimit = require('express-rate-limit');
 const User = require('../models/User');
 const { authenticate } = require('../middleware/auth');
+const { auth: logger } = require('../utils/logger');
 
 const router = express.Router();
 
@@ -107,7 +108,12 @@ router.post(
         },
       });
     } catch (error) {
-      console.error('Signup error:', error);
+      logger.error('Signup error', { 
+      error: error.message, 
+      stack: error.stack, 
+      email: req.body.email,
+      ip: req.ip 
+    });
 
       // Handle MongoDB connection issues
       if (
@@ -180,7 +186,12 @@ router.post(
         },
       });
     } catch (error) {
-      console.error('Signin error:', error);
+      logger.error('Signin error', { 
+      error: error.message, 
+      stack: error.stack, 
+      email: req.body.email,
+      ip: req.ip 
+    });
 
       if (error.message === 'Invalid login credentials') {
         return res.status(401).json({
@@ -233,7 +244,12 @@ router.post('/logout', authenticate, async (req, res) => {
       message: 'User logged out successfully',
     });
   } catch (error) {
-    console.error('Logout error:', error);
+    logger.error('Logout error', { 
+      error: error.message, 
+      stack: error.stack, 
+      userId: req.user?.id,
+      ip: req.ip 
+    });
     res.status(500).json({
       success: false,
       message: 'Server error during logout',
@@ -262,7 +278,12 @@ router.get('/me', authenticate, async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Get profile error:', error);
+    logger.error('Get profile error', { 
+      error: error.message, 
+      stack: error.stack, 
+      userId: req.user?.id,
+      ip: req.ip 
+    });
     res.status(500).json({
       success: false,
       message: 'Server error while fetching profile',
@@ -326,7 +347,12 @@ router.put(
         },
       });
     } catch (error) {
-      console.error('Update profile error:', error);
+      logger.error('Update profile error', { 
+      error: error.message, 
+      stack: error.stack, 
+      userId: req.user?.id,
+      ip: req.ip 
+    });
       res.status(500).json({
         success: false,
         message: 'Server error while updating profile',

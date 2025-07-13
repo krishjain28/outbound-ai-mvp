@@ -9,6 +9,7 @@ const OpenAI = require('openai');
 // Import new services
 const speechService = require('../services/speechService');
 const conversationService = require('../services/conversationService');
+const { calls: logger } = require('../utils/logger');
 
 // Initialize OpenAI lazily
 let openai = null;
@@ -41,31 +42,18 @@ const validateEnvironmentVariables = () => {
   if (!process.env.ELEVENLABS_API_KEY) optional.push('ELEVENLABS_API_KEY');
 
   if (missing.length > 0) {
-    console.error(
-      '⚠️  Missing required environment variables:',
-      missing.join(', ')
-    );
-    console.error(
-      '📝 Please create a .env file in the backend directory with:'
-    );
-    console.error('   TELNYX_API_KEY=your-telnyx-api-key');
-    console.error('   TELNYX_PHONE_NUMBER=your-telnyx-phone-number');
-    console.error('   OPENAI_API_KEY=your-openai-api-key');
-    console.error('   DEEPGRAM_API_KEY=your-deepgram-api-key (optional)');
-    console.error('   ELEVENLABS_API_KEY=your-elevenlabs-api-key (optional)');
+    logger.error('Missing required environment variables', {
+      missing: missing.join(', '),
+      instructions: 'Please create a .env file in the backend directory with required variables'
+    });
     return false;
   }
 
   if (optional.length > 0) {
-    console.log(
-      'ℹ️  Optional environment variables not set:',
-      optional.join(', ')
-    );
-    console.log('📝 For enhanced features, add to your .env file:');
-    if (optional.includes('DEEPGRAM_API_KEY'))
-      console.log('   DEEPGRAM_API_KEY=your-deepgram-api-key');
-    if (optional.includes('ELEVENLABS_API_KEY'))
-      console.log('   ELEVENLABS_API_KEY=your-elevenlabs-api-key');
+    logger.info('Optional environment variables not set', {
+      optional: optional.join(', '),
+      note: 'For enhanced features, add these to your .env file'
+    });
   }
 
   return true;

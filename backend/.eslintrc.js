@@ -10,7 +10,7 @@ module.exports = {
     sourceType: 'module',
   },
   rules: {
-    'no-console': 'warn', // Make console statements warnings, not errors
+    'no-console': process.env.NODE_ENV === 'production' ? 'error' : 'warn', // Strict console rules in production
     'no-unused-vars': 'error',
     'no-var': 'error',
     'prefer-const': 'error',

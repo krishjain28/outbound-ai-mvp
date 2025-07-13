@@ -2,6 +2,7 @@ const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
 const cors = require('cors');
 const validator = require('validator');
+const { security: logger } = require('../utils/logger');
 
 // Rate limiting configurations
 const createRateLimit = (windowMs, max, message) => {
@@ -16,7 +17,12 @@ const createRateLimit = (windowMs, max, message) => {
     standardHeaders: true,
     legacyHeaders: false,
     handler: (req, res) => {
-      console.warn(`Rate limit exceeded for IP: ${req.ip}, Path: ${req.path}`);
+      logger.warn('Rate limit exceeded', { 
+        ip: req.ip, 
+        path: req.path, 
+        userAgent: req.get('User-Agent'),
+        timestamp: new Date().toISOString()
+      });
       res.status(429).json({
         success: false,
         message,

@@ -2,6 +2,7 @@ const express = require('express');
 const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
 const { authenticate, authorize } = require('../middleware/auth');
+const { auth: logger } = require('../utils/logger');
 
 const router = express.Router();
 
@@ -48,7 +49,12 @@ router.get('/dashboard', authenticate, async (req, res) => {
       data: dashboardData,
     });
   } catch (error) {
-    console.error('Dashboard error:', error);
+    logger.error('Dashboard error', { 
+      error: error.message, 
+      stack: error.stack, 
+      userId: req.user?.id,
+      ip: req.ip 
+    });
     res.status(500).json({
       success: false,
       message: 'Server error while fetching dashboard data',
@@ -104,7 +110,12 @@ router.put(
         message: 'Password changed successfully',
       });
     } catch (error) {
-      console.error('Change password error:', error);
+      logger.error('Change password error', { 
+      error: error.message, 
+      stack: error.stack, 
+      userId: req.user?.id,
+      ip: req.ip 
+    });
       res.status(500).json({
         success: false,
         message: 'Server error while changing password',
@@ -129,7 +140,12 @@ router.delete('/account', authenticate, async (req, res) => {
       message: 'Account deactivated successfully',
     });
   } catch (error) {
-    console.error('Deactivate account error:', error);
+    logger.error('Deactivate account error', { 
+      error: error.message, 
+      stack: error.stack, 
+      userId: req.user?.id,
+      ip: req.ip 
+    });
     res.status(500).json({
       success: false,
       message: 'Server error while deactivating account',
@@ -168,7 +184,12 @@ router.get('/all', authenticate, authorize('admin'), async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Get all users error:', error);
+    logger.error('Get all users error', { 
+      error: error.message, 
+      stack: error.stack, 
+      userId: req.user?.id,
+      ip: req.ip 
+    });
     res.status(500).json({
       success: false,
       message: 'Server error while fetching users',
@@ -218,7 +239,13 @@ router.put(
         },
       });
     } catch (error) {
-      console.error('Update user role error:', error);
+      logger.error('Update user role error', { 
+      error: error.message, 
+      stack: error.stack, 
+      userId: req.user?.id,
+      targetUserId: req.params.id,
+      ip: req.ip 
+    });
       res.status(500).json({
         success: false,
         message: 'Server error while updating user role',

@@ -1,4 +1,5 @@
 const OpenAI = require('openai');
+const { conversation: logger } = require('../utils/logger');
 
 class ConversationService {
   constructor() {

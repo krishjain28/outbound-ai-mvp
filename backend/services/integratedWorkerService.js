@@ -1,6 +1,6 @@
 // backend/services/integratedWorkerService.js
 const Call = require('../models/Call');
-const conversationService = require('./conversationService');
+const { worker: logger } = require('../utils/logger');
 
 class IntegratedWorkerService {
   constructor() {
@@ -10,7 +10,7 @@ class IntegratedWorkerService {
   }
 
   start() {
-    console.log('🔄 Starting Integrated Worker Service...');
+    logger.info('Starting Integrated Worker Service...');
 
     this.isRunning = true;
 
@@ -24,7 +24,7 @@ class IntegratedWorkerService {
       this.processConversationQueue();
     }, 10000);
 
-    console.log('✅ Integrated Worker Service started');
+    logger.info('Integrated Worker Service started');
   }
 
   async processCallQueue() {
@@ -99,7 +99,7 @@ class IntegratedWorkerService {
   }
 
   stop() {
-    console.log('🛑 Stopping Integrated Worker Service...');
+    logger.info('Stopping Integrated Worker Service...');
 
     this.isRunning = false;
 
@@ -111,7 +111,7 @@ class IntegratedWorkerService {
       clearInterval(this.conversationProcessingInterval);
     }
 
-    console.log('✅ Integrated Worker Service stopped');
+    logger.info('Integrated Worker Service stopped');
   }
 
   getStatus() {

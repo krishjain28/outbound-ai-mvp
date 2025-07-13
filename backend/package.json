@@ -13,7 +13,12 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "security:audit": "npm audit",
-    "security:fix": "npm audit fix"
+    "security:fix": "npm audit fix",
+    "logs:view": "tail -f logs/combined-$(date +%Y-%m-%d).log",
+    "logs:errors": "tail -f logs/error-$(date +%Y-%m-%d).log",
+    "logs:api": "tail -f logs/api-$(date +%Y-%m-%d).log",
+    "logs:clean": "rm -f logs/*.log logs/*.json",
+    "logs:size": "du -h logs/"
   },
   "dependencies": {
     "@deepgram/sdk": "^4.9.1",
@@ -32,6 +37,8 @@
     "morgan": "^1.10.0",
     "openai": "^5.9.0",
     "validator": "^13.11.0",
+    "winston": "^3.17.0",
+    "winston-daily-rotate-file": "^5.0.0",
     "ws": "^8.18.3"
   },
   "devDependencies": {
