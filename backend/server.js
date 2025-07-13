@@ -159,4 +159,5 @@ app.listen = function(port, callback) {
 };
 
 app.listen(PORT);
-console.log('🔧 Integrated worker service configured'); 
+console.log('🔧 Integrated worker service configured');
+console.log('🚀 Worker endpoints: /api/workers/status, /api/workers/start, /api/workers/stop'); 
