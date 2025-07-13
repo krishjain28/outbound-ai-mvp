@@ -97,7 +97,7 @@ export const authAPI = {
     data: Partial<User>
   ): Promise<{ success: boolean; data: { user: User } }> => {
     try {
-      const response = await api.put('/auth/profile', data);
+      const response = await api.put('/user/profile', data);
       return response.data;
     } catch (error: unknown) {
       const axiosError = error as AxiosErrorType;

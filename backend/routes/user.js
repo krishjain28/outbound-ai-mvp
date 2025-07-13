@@ -62,6 +62,76 @@ router.get('/dashboard', authenticate, async (req, res) => {
   }
 });
 
+// @route   PUT /api/user/profile
+// @desc    Update user profile
+// @access  Private
+router.put(
+  '/profile',
+  authenticate,
+  [
+    body('name')
+      .optional()
+      .trim()
+      .isLength({ min: 2, max: 50 })
+      .withMessage('Name must be between 2 and 50 characters'),
+    body('email')
+      .optional()
+      .isEmail()
+      .normalizeEmail()
+      .withMessage('Please provide a valid email'),
+  ],
+  handleValidationErrors,
+  async (req, res) => {
+    try {
+      const { name, email } = req.body;
+      const user = await User.findById(req.user._id);
+
+      // Check if email is being changed and if it's already taken
+      if (email && email !== user.email) {
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+          return res.status(400).json({
+            success: false,
+            message: 'Email is already taken',
+          });
+        }
+      }
+
+      // Update user fields
+      if (name) user.name = name;
+      if (email) user.email = email;
+
+      await user.save();
+
+      res.json({
+        success: true,
+        message: 'Profile updated successfully',
+        data: {
+          user: {
+            id: user._id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            createdAt: user.createdAt,
+            lastLogin: user.lastLogin,
+          },
+        },
+      });
+    } catch (error) {
+      logger.error('Update profile error', { 
+        error: error.message, 
+        stack: error.stack, 
+        userId: req.user?.id,
+        ip: req.ip 
+      });
+      res.status(500).json({
+        success: false,
+        message: 'Server error while updating profile',
+      });
+    }
+  }
+);
+
 // @route   PUT /api/user/change-password
 // @desc    Change user password
 // @access  Private
