@@ -2,12 +2,23 @@ const OpenAI = require('openai');
 
 class ConversationService {
   constructor() {
-    this.openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY
-    });
+    this.openai = null;
     
     // Conversation memory for each call
     this.conversationMemory = new Map();
+  }
+
+  // Initialize OpenAI client when needed
+  getOpenAI() {
+    if (!this.openai) {
+      if (!process.env.OPENAI_API_KEY) {
+        throw new Error('OPENAI_API_KEY environment variable is required');
+      }
+      this.openai = new OpenAI({
+        apiKey: process.env.OPENAI_API_KEY
+      });
+    }
+    return this.openai;
     
     // Professional SDR personality
     this.systemPrompt = `You are Mike, a highly experienced and professional Sales Development Representative (SDR) with 5+ years of experience at WebCraft Solutions. You specialize in helping small to medium-sized businesses establish their online presence through professional website development.
@@ -150,7 +161,7 @@ Remember: You're having a real conversation with a real person. Be human, be gen
       
       console.log(`🤖 Generating GPT-4 response for call ${callId}, turn ${context.turnCount}`);
       
-      const completion = await this.openai.chat.completions.create({
+      const completion = await this.getOpenAI().chat.completions.create({
         model: 'gpt-4',
         messages: messages,
         max_tokens: 150,
