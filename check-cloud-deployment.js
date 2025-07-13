@@ -39,7 +39,7 @@ function makeRequest(url, options = {}) {
         'User-Agent': 'Cloud-Deployment-Checker/1.0',
         ...options.headers
       },
-      timeout: 10000 // 10 second timeout
+      timeout: 30000 // 30 second timeout for Render cold starts
     };
 
     const req = https.request(requestOptions, (res) => {
@@ -72,30 +72,63 @@ function makeRequest(url, options = {}) {
 async function checkBackendHealth() {
   log('\n🔍 Checking Backend Health (Render)...', 'blue');
   
-  try {
-    const response = await makeRequest(`${BACKEND_URL}/health`);
-    
-    if (response.statusCode === 200) {
-      log('✅ Backend is healthy and responding', 'green');
+  // Try multiple times for Render cold starts
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      log(`   Attempt ${attempt}/3...`, 'blue');
+      const response = await makeRequest(`${BACKEND_URL}/health`);
       
-      try {
-        const healthData = JSON.parse(response.data);
-        log(`   Status: ${healthData.status}`, 'green');
-        log(`   Uptime: ${healthData.uptime || 'N/A'}`, 'green');
-        log(`   Memory Usage: ${healthData.memoryUsage || 'N/A'}`, 'green');
+      if (response.statusCode === 200) {
+        log('✅ Backend is healthy and responding', 'green');
         
-        if (healthData.workers) {
-          log(`   Workers: ${healthData.workers.status || 'N/A'}`, 'green');
+        try {
+          const healthData = JSON.parse(response.data);
+          log(`   Status: ${healthData.status}`, 'green');
+          log(`   Environment: ${healthData.environment || 'N/A'}`, 'green');
+          
+          if (healthData.database) {
+            log(`   Database: ${healthData.database.status}`, 
+                healthData.database.status === 'connected' ? 'green' : 'red');
+          }
+          
+          if (healthData.workers) {
+            log(`   Workers: ${healthData.workers.status || 'N/A'}`, 'green');
+          }
+          
+          return; // Success, exit retry loop
+        } catch (e) {
+          log('   Health data parsing failed, but endpoint is responding', 'yellow');
+          return; // Success, exit retry loop
         }
-      } catch (e) {
-        log('   Health data parsing failed, but endpoint is responding', 'yellow');
+      } else if (response.statusCode === 503) {
+        log(`⚠️  Backend responded with 503 (Service Unavailable) - attempt ${attempt}/3`, 'yellow');
+        if (attempt < 3) {
+          log('   Waiting 5 seconds before retry...', 'blue');
+          await new Promise(resolve => setTimeout(resolve, 5000));
+        }
+      } else {
+        log(`❌ Backend responded with status: ${response.statusCode}`, 'red');
+        return; // Don't retry for other status codes
       }
-    } else {
-      log(`❌ Backend responded with status: ${response.statusCode}`, 'red');
+    } catch (error) {
+      if (error.message.includes('timeout')) {
+        log(`⚠️  Backend timeout - attempt ${attempt}/3 (Render cold start?)`, 'yellow');
+        if (attempt < 3) {
+          log('   Waiting 10 seconds before retry...', 'blue');
+          await new Promise(resolve => setTimeout(resolve, 10000));
+        }
+      } else {
+        log(`❌ Backend health check failed: ${error.message}`, 'red');
+        return; // Don't retry for non-timeout errors
+      }
     }
-  } catch (error) {
-    log(`❌ Backend health check failed: ${error.message}`, 'red');
   }
+  
+  log('❌ Backend health check failed after 3 attempts', 'red');
+  log('   This might be due to:', 'blue');
+  log('   - Render cold start (first request after inactivity)', 'blue');
+  log('   - Deployment in progress', 'blue');
+  log('   - Backend service issues', 'blue');
 }
 
 async function checkBackendAPI() {
@@ -156,7 +189,31 @@ async function checkDatabaseConnection() {
   log('\n🔍 Checking Database Connection (MongoDB Atlas)...', 'blue');
   
   try {
-    // Try to access a database-dependent endpoint
+    // First check the health endpoint for database status
+    const healthResponse = await makeRequest(`${BACKEND_URL}/health`);
+    
+    if (healthResponse.statusCode === 200) {
+      try {
+        const healthData = JSON.parse(healthResponse.data);
+        if (healthData.database) {
+          if (healthData.database.status === 'connected') {
+            log('✅ Database connection is working', 'green');
+            log(`   Status: ${healthData.database.status}`, 'green');
+            log(`   Ready State: ${healthData.database.readyState}`, 'green');
+            return;
+          } else {
+            log('❌ Database connection is not working', 'red');
+            log(`   Status: ${healthData.database.status}`, 'red');
+            log(`   Ready State: ${healthData.database.readyState}`, 'red');
+            return;
+          }
+        }
+      } catch (e) {
+        // Fallback to workers endpoint
+      }
+    }
+    
+    // Fallback: Try to access a database-dependent endpoint
     const response = await makeRequest(`${BACKEND_URL}/api/workers/status`);
     
     if (response.statusCode === 200) {
@@ -179,7 +236,11 @@ async function checkDatabaseConnection() {
       log(`⚠️  Unexpected response: ${response.statusCode}`, 'yellow');
     }
   } catch (error) {
-    log(`❌ Database check failed: ${error.message}`, 'red');
+    if (error.message.includes('timeout')) {
+      log('⚠️  Database check timeout (backend might be starting up)', 'yellow');
+    } else {
+      log(`❌ Database check failed: ${error.message}`, 'red');
+    }
   }
 }
 
