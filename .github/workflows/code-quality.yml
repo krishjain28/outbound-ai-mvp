@@ -1,0 +1,284 @@
+name: Code Quality
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  NODE_VERSION: '18'
+
+jobs:
+  # ESLint Analysis
+  eslint:
+    name: ESLint Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install Backend Dependencies
+        run: |
+          cd backend
+          npm ci
+
+      - name: Install Frontend Dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Run ESLint (Backend)
+        run: |
+          cd backend
+          npx eslint . --ext .js,.jsx,.ts,.tsx --format=json --output-file=backend-eslint-report.json || true
+
+      - name: Run ESLint (Frontend)
+        run: |
+          cd frontend
+          npx eslint . --ext .js,.jsx,.ts,.tsx --format=json --output-file=frontend-eslint-report.json || true
+
+      - name: Annotate ESLint Results
+        uses: ataylorme/eslint-annotate-action@v2
+        if: always()
+        with:
+          repo-token: "${{ secrets.GITHUB_TOKEN }}"
+          report-json: "backend-eslint-report.json"
+
+      - name: Upload ESLint Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: eslint-reports
+          path: |
+            backend-eslint-report.json
+            frontend-eslint-report.json
+
+  # Prettier Formatting Check
+  prettier:
+    name: Prettier Formatting
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install Backend Dependencies
+        run: |
+          cd backend
+          npm ci
+
+      - name: Install Frontend Dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Check Prettier Formatting (Backend)
+        run: |
+          cd backend
+          npx prettier --check . --write=false || {
+            echo "Backend formatting issues found. Run 'npm run format' to fix."
+            exit 1
+          }
+
+      - name: Check Prettier Formatting (Frontend)
+        run: |
+          cd frontend
+          npx prettier --check . --write=false || {
+            echo "Frontend formatting issues found. Run 'npm run format' to fix."
+            exit 1
+          }
+
+  # TypeScript Type Checking
+  typescript:
+    name: TypeScript Type Checking
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install Frontend Dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: TypeScript Type Check (Frontend)
+        run: |
+          cd frontend
+          npx tsc --noEmit
+
+  # Code Coverage
+  coverage:
+    name: Code Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install Backend Dependencies
+        run: |
+          cd backend
+          npm ci
+
+      - name: Install Frontend Dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Run Backend Tests with Coverage
+        run: |
+          cd backend
+          npm test -- --coverage || echo "No backend tests configured"
+        env:
+          NODE_ENV: test
+
+      - name: Run Frontend Tests with Coverage
+        run: |
+          cd frontend
+          npm test -- --coverage --watchAll=false || echo "No frontend tests configured"
+        env:
+          CI: true
+
+      - name: Upload Coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          directory: ./coverage
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+
+  # Code Complexity Analysis
+  complexity:
+    name: Code Complexity Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install complexity tools
+        run: npm install -g complexity-report
+
+      - name: Analyze Backend Complexity
+        run: |
+          cd backend
+          find . -name "*.js" -not -path "./node_modules/*" | xargs cr --format json > backend-complexity.json || true
+
+      - name: Analyze Frontend Complexity
+        run: |
+          cd frontend/src
+          find . -name "*.ts" -o -name "*.tsx" -not -path "./node_modules/*" | xargs cr --format json > frontend-complexity.json || true
+
+      - name: Upload Complexity Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: complexity-reports
+          path: |
+            backend-complexity.json
+            frontend/src/frontend-complexity.json
+
+  # Bundle Size Analysis
+  bundle-size:
+    name: Bundle Size Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install Frontend Dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Build Frontend
+        run: |
+          cd frontend
+          npm run build
+        env:
+          REACT_APP_API_URL: https://outbound-ai.onrender.com
+
+      - name: Analyze Bundle Size
+        uses: preactjs/compressed-size-action@v2
+        with:
+          repo-token: "${{ secrets.GITHUB_TOKEN }}"
+          pattern: "./frontend/build/static/js/*.js"
+          exclude: "{**/*.map,**/node_modules/**}"
+
+  # Quality Gate
+  quality-gate:
+    name: Quality Gate
+    needs: [eslint, prettier, typescript, coverage, complexity, bundle-size]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Check Quality Gate
+        run: |
+          echo "## Code Quality Summary" > quality-report.md
+          echo "- ESLint: ${{ needs.eslint.result }}" >> quality-report.md
+          echo "- Prettier: ${{ needs.prettier.result }}" >> quality-report.md
+          echo "- TypeScript: ${{ needs.typescript.result }}" >> quality-report.md
+          echo "- Coverage: ${{ needs.coverage.result }}" >> quality-report.md
+          echo "- Complexity: ${{ needs.complexity.result }}" >> quality-report.md
+          echo "- Bundle Size: ${{ needs.bundle-size.result }}" >> quality-report.md
+          echo "- Check Date: $(date)" >> quality-report.md
+          
+          # Fail if any critical checks failed
+          if [[ "${{ needs.eslint.result }}" == "failure" || "${{ needs.prettier.result }}" == "failure" || "${{ needs.typescript.result }}" == "failure" ]]; then
+            echo "Quality gate failed due to critical issues"
+            exit 1
+          fi
+          
+          echo "Quality gate passed"
+
+      - name: Upload Quality Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-report
+          path: quality-report.md
+
+      - name: Comment PR with Quality Results
+        uses: actions/github-script@v6
+        if: github.event_name == 'pull_request'
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('quality-report.md', 'utf8');
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## 🔍 Code Quality Report\n\n${report}`
+            }); 

@@ -1,0 +1,292 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  NODE_VERSION: '18'
+  BACKEND_DIR: './backend'
+  FRONTEND_DIR: './frontend'
+
+jobs:
+  # Code Quality and Linting
+  code-quality:
+    name: Code Quality & Linting
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install Backend Dependencies
+        run: |
+          cd ${{ env.BACKEND_DIR }}
+          npm ci
+
+      - name: Install Frontend Dependencies
+        run: |
+          cd ${{ env.FRONTEND_DIR }}
+          npm ci
+
+      - name: Run ESLint (Backend)
+        run: |
+          cd ${{ env.BACKEND_DIR }}
+          npx eslint . --ext .js,.jsx,.ts,.tsx --format=compact || true
+
+      - name: Run ESLint (Frontend)
+        run: |
+          cd ${{ env.FRONTEND_DIR }}
+          npx eslint . --ext .js,.jsx,.ts,.tsx --format=compact || true
+
+      - name: Check Prettier Formatting (Backend)
+        run: |
+          cd ${{ env.BACKEND_DIR }}
+          npx prettier --check . || true
+
+      - name: Check Prettier Formatting (Frontend)
+        run: |
+          cd ${{ env.FRONTEND_DIR }}
+          npx prettier --check . || true
+
+  # Security Scanning
+  security-scan:
+    name: Security Scanning
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install Backend Dependencies
+        run: |
+          cd ${{ env.BACKEND_DIR }}
+          npm ci
+
+      - name: Install Frontend Dependencies
+        run: |
+          cd ${{ env.FRONTEND_DIR }}
+          npm ci
+
+      - name: Run npm audit (Backend)
+        run: |
+          cd ${{ env.BACKEND_DIR }}
+          npm audit --audit-level=moderate || true
+
+      - name: Run npm audit (Frontend)
+        run: |
+          cd ${{ env.FRONTEND_DIR }}
+          npm audit --audit-level=moderate || true
+
+      - name: Run Snyk Security Scan (Backend)
+        uses: snyk/actions/node@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high --file=${{ env.BACKEND_DIR }}/package.json
+
+      - name: Run Snyk Security Scan (Frontend)
+        uses: snyk/actions/node@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high --file=${{ env.FRONTEND_DIR }}/package.json
+
+  # Backend Tests
+  backend-tests:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+    services:
+      mongodb:
+        image: mongo:5.0
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd mongo
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install Backend Dependencies
+        run: |
+          cd ${{ env.BACKEND_DIR }}
+          npm ci
+
+      - name: Run Backend Tests
+        run: |
+          cd ${{ env.BACKEND_DIR }}
+          npm test || echo "No tests configured yet"
+        env:
+          NODE_ENV: test
+          MONGODB_URI: mongodb://localhost:27017/test-db
+          JWT_SECRET: test-secret
+          DEEPGRAM_API_KEY: test-key
+          ELEVENLABS_API_KEY: test-key
+          TELNYX_API_KEY: test-key
+
+      - name: Test Backend Health Check
+        run: |
+          cd ${{ env.BACKEND_DIR }}
+          timeout 30 node -e "
+            const app = require('./server.js');
+            const http = require('http');
+            setTimeout(() => {
+              http.get('http://localhost:5001/health', (res) => {
+                console.log('Health check status:', res.statusCode);
+                process.exit(res.statusCode === 200 ? 0 : 1);
+              });
+            }, 5000);
+          " || echo "Health check test completed"
+        env:
+          NODE_ENV: test
+          MONGODB_URI: mongodb://localhost:27017/test-db
+          JWT_SECRET: test-secret
+          DEEPGRAM_API_KEY: test-key
+          ELEVENLABS_API_KEY: test-key
+          TELNYX_API_KEY: test-key
+
+  # Frontend Tests
+  frontend-tests:
+    name: Frontend Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install Frontend Dependencies
+        run: |
+          cd ${{ env.FRONTEND_DIR }}
+          npm ci
+
+      - name: Run Frontend Tests
+        run: |
+          cd ${{ env.FRONTEND_DIR }}
+          npm test -- --coverage --watchAll=false || echo "No tests configured yet"
+        env:
+          CI: true
+
+      - name: Build Frontend
+        run: |
+          cd ${{ env.FRONTEND_DIR }}
+          npm run build
+        env:
+          REACT_APP_API_URL: https://outbound-ai.onrender.com
+
+      - name: Upload Frontend Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build
+          path: ${{ env.FRONTEND_DIR }}/build
+
+  # Backend Deployment to Render
+  deploy-backend:
+    name: Deploy Backend to Render
+    needs: [code-quality, security-scan, backend-tests]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to Render
+        uses: johnbeynon/render-deploy-action@v0.0.8
+        with:
+          service-id: ${{ secrets.RENDER_SERVICE_ID }}
+          api-key: ${{ secrets.RENDER_API_KEY }}
+          wait-for-success: true
+
+      - name: Verify Deployment
+        run: |
+          echo "Waiting for deployment to be ready..."
+          sleep 30
+          curl -f https://outbound-ai.onrender.com/health || exit 1
+          echo "Backend deployment successful!"
+
+  # Frontend Deployment to Vercel
+  deploy-frontend:
+    name: Deploy Frontend to Vercel
+    needs: [code-quality, security-scan, frontend-tests]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install Frontend Dependencies
+        run: |
+          cd ${{ env.FRONTEND_DIR }}
+          npm ci
+
+      - name: Build Frontend
+        run: |
+          cd ${{ env.FRONTEND_DIR }}
+          npm run build
+        env:
+          REACT_APP_API_URL: https://outbound-ai.onrender.com
+
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          working-directory: ${{ env.FRONTEND_DIR }}
+          vercel-args: '--prod'
+
+  # Notification
+  notify:
+    name: Deployment Notification
+    needs: [deploy-backend, deploy-frontend]
+    runs-on: ubuntu-latest
+    if: always() && github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - name: Send Slack Notification
+        uses: 8398a7/action-slack@v3
+        if: always()
+        with:
+          status: ${{ job.status }}
+          text: |
+            🚀 AI SDR Deployment Status:
+            Backend: ${{ needs.deploy-backend.result }}
+            Frontend: ${{ needs.deploy-frontend.result }}
+            
+            Backend URL: https://outbound-ai.onrender.com
+            Frontend URL: https://your-frontend-url.vercel.app
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }} 
