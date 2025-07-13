@@ -17,7 +17,7 @@ services:
       - key: PORT
         value: 10000
       - key: MONGODB_URI
-        value: mongodb+srv://krishjain:Krish@123@cluster0.v7ckm.mongodb.net/outbound-ai-mvp?retryWrites=true&w=majority
+        value: mongodb+srv://krishjain:Krish%40123@cluster0.v7ckm.mongodb.net/outbound-ai-mvp?retryWrites=true&w=majority
       - key: JWT_SECRET
         generateValue: true
       - key: JWT_EXPIRE
