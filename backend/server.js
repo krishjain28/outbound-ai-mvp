@@ -27,6 +27,7 @@ const {
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/user');
 const callRoutes = require('./routes/calls');
+const dashboardRoutes = require('./routes/dashboard');
 
 // Import integrated worker service
 const IntegratedWorkerService = require('./services/integratedWorkerService');
@@ -95,13 +96,22 @@ const connectDB = async () => {
 
     // Don't exit the process, let the app run without MongoDB for now
     dbLogger.warn('Server will continue running without MongoDB connection');
+    
+    // Set up reconnection logic
+    setTimeout(() => {
+      dbLogger.info('Attempting to reconnect to MongoDB...');
+      connectDB();
+    }, 30000); // Try to reconnect every 30 seconds
   }
 };
 
 // Connect to MongoDB
 connectDB();
 
-// Routes
+// Dashboard route (accessible at root URL)
+app.use('/dashboard', dashboardRoutes);
+
+// API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/calls', callRoutes);
@@ -173,6 +183,23 @@ app.get('/api/health', asyncHandler(async (req, res) => {
 
 // Global error handling middleware
 app.use(globalErrorHandler);
+
+// Welcome page for root URL
+app.get('/', asyncHandler(async (req, res) => {
+  res.json({
+    message: '🚀 AI SDR Backend API',
+    status: 'online',
+    version: '1.0.0',
+    environment: process.env.NODE_ENV || 'development',
+    timestamp: new Date().toISOString(),
+    endpoints: {
+      dashboard: '/dashboard',
+      health: '/health',
+      api: '/api',
+      docs: 'Visit /dashboard for full system status'
+    }
+  });
+}));
 
 // 404 handler
 app.use('*', asyncHandler(async (req, res) => {
