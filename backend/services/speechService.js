@@ -23,7 +23,7 @@ class SpeechService {
           operation: 'deepgram_initialization',
           service: 'deepgram'
         });
-        logger.warn('Failed to initialize Deepgram client', { error: speechError.message });
+        logger.warn(`Failed to initialize Deepgram client: ${speechError.message}`);
       }
     } else {
       logger.warn('⚠️ Deepgram API key not provided - speech recognition will be disabled');
@@ -45,7 +45,7 @@ class SpeechService {
           operation: 'elevenlabs_initialization',
           service: 'elevenlabs'
         });
-        logger.warn('⚠️ Failed to initialize ElevenLabs client:', { error: speechError.message });
+        logger.warn(`⚠️ Failed to initialize ElevenLabs client: ${speechError.message}`);
       }
     } else {
       logger.warn('⚠️ ElevenLabs API key not provided - enhanced TTS will be disabled');
@@ -123,7 +123,7 @@ class SpeechService {
           operation: 'deepgram_stream',
           callControlId 
         });
-        logger.error('❌ Deepgram error:', { error: speechError.message });
+        logger.error(`❌ Deepgram error: ${speechError.message}`);
         onError(speechError);
       });
 
@@ -155,7 +155,7 @@ class SpeechService {
         operation: 'start_speech_recognition',
         callControlId 
       });
-      logger.error('❌ Failed to start speech recognition:', { error: speechError.message });
+      logger.error(`❌ Failed to start speech recognition: ${speechError.message}`);
       onError(speechError);
       return { success: false, error: speechError.message };
     }
@@ -188,7 +188,7 @@ class SpeechService {
         operation: 'telnyx_media_stream',
         callControlId 
       });
-      logger.error('❌ Telnyx media stream error:', { error: apiError.message });
+      logger.error(`❌ Telnyx media stream error: ${apiError.message}`);
       return { success: false, error: apiError.message };
     }
   }
@@ -244,7 +244,7 @@ class SpeechService {
         callControlId,
         text 
       });
-      logger.error('❌ ElevenLabs TTS error:', { error: speechError.message });
+      logger.error(`❌ ElevenLabs TTS error: ${speechError.message}`);
       return {
         success: false,
         error: speechError.message,
@@ -313,7 +313,7 @@ class SpeechService {
         operation: 'speech_playback',
         callControlId 
       });
-      logger.error('❌ Speech playback error:', { error: speechError.message });
+      logger.error(`❌ Speech playback error: ${speechError.message}`);
       logger.info('🔄 Falling back to Telnyx TTS');
       return this.speakWithTelnyxTTS(callControlId, text);
     }
@@ -351,7 +351,7 @@ class SpeechService {
         callControlId,
         text 
       });
-      logger.error('❌ Telnyx TTS fallback error:', { error: speechError.message });
+      logger.error(`❌ Telnyx TTS fallback error: ${speechError.message}`);
       return { success: false, error: speechError.message };
     }
   }
@@ -386,7 +386,7 @@ class SpeechService {
             operation: 'stop_telnyx_stream',
             callControlId 
           });
-          logger.warn('⚠️ Error stopping Telnyx stream:', { error: apiError.message });
+          logger.warn(`⚠️ Error stopping Telnyx stream: ${apiError.message}`);
         }
 
         // Remove session
@@ -401,7 +401,7 @@ class SpeechService {
         operation: 'stop_speech_recognition',
         callControlId 
       });
-      logger.error('❌ Error stopping speech recognition:', { error: speechError.message });
+      logger.error(`❌ Error stopping speech recognition: ${speechError.message}`);
       return { success: false, error: speechError.message };
     }
   }
@@ -433,7 +433,7 @@ class SpeechService {
           operation: 'send_audio_to_deepgram',
           callControlId 
         });
-        logger.error('❌ Error sending audio to Deepgram:', { error: speechError.message });
+        logger.error(`❌ Error sending audio to Deepgram: ${speechError.message}`);
       }
     }
   }

@@ -211,7 +211,7 @@ Remember: You're having a real conversation with a real person. Be human, be gen
         callId,
         stage 
       });
-      logger.error('❌ Error generating AI response:', { error: conversationError.message });
+      logger.error(`❌ Error generating AI response: ${conversationError.message}`);
       return {
         success: false,
         error: conversationError.message,

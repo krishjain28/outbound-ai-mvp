@@ -1,7 +1,6 @@
-import React from 'react';
-import { render } from '@testing-library/react';
-
 // Simple test that will always pass
+export {};
+
 test('renders app without crashing', () => {
   // Just test that we can render without errors
   expect(true).toBe(true);

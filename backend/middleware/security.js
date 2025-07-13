@@ -17,12 +17,7 @@ const createRateLimit = (windowMs, max, message) => {
     standardHeaders: true,
     legacyHeaders: false,
     handler: (req, res) => {
-      logger.warn('Rate limit exceeded', { 
-        ip: req.ip, 
-        path: req.path, 
-        userAgent: req.get('User-Agent'),
-        timestamp: new Date().toISOString()
-      });
+      logger.warn(`Rate limit exceeded | ip: ${req.ip} | path: ${req.path} | userAgent: ${req.get('User-Agent')} | timestamp: ${new Date().toISOString()}`);
       res.status(429).json({
         success: false,
         message,

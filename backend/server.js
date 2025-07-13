@@ -63,10 +63,7 @@ const connectDB = async () => {
       throw new Error('MONGODB_URI environment variable is not set');
     }
     
-    dbLogger.info('Attempting to connect to MongoDB...', { 
-      mongoURI: mongoURI.replace(/\/\/.*@/, '//***:***@'),
-      environment: process.env.NODE_ENV || 'development'
-    });
+    dbLogger.info(`Attempting to connect to MongoDB... | mongoURI: ${mongoURI.replace(/\/\/.*@/, '//***:***@')} | environment: ${process.env.NODE_ENV || 'development'}`);
 
     await mongoose.connect(mongoURI, {
       serverSelectionTimeoutMS: 10000, // Timeout after 10s
@@ -84,15 +81,7 @@ const connectDB = async () => {
       mongoURI: process.env.MONGODB_URI ? process.env.MONGODB_URI.replace(/\/\/.*@/, '//***:***@') : 'NOT_SET'
     });
     
-    dbLogger.info('Possible solutions:', {
-      solutions: [
-        'Check if your IP is whitelisted in MongoDB Atlas',
-        'Verify your MongoDB connection string in Render environment variables',
-        'Check if MongoDB Atlas cluster is running',
-        'Ensure network connectivity to MongoDB Atlas',
-        'Verify MongoDB Atlas username and password are correct'
-      ]
-    });
+    dbLogger.info(`Possible solutions: Check if your IP is whitelisted in MongoDB Atlas, Verify your MongoDB connection string in Render environment variables, Check if MongoDB Atlas cluster is running, Ensure network connectivity to MongoDB Atlas, Verify MongoDB Atlas username and password are correct`);
 
     // Don't exit the process, let the app run without MongoDB for now
     dbLogger.warn('Server will continue running without MongoDB connection');
@@ -221,11 +210,7 @@ const PORT = process.env.PORT || 5001;
 const originalListen = app.listen;
 app.listen = function (port, callback) {
   const server = originalListen.call(this, port, () => {
-    logger.info('Server started', { 
-      port, 
-      environment: process.env.NODE_ENV || 'development',
-      timestamp: new Date().toISOString()
-    });
+    logger.info(`Server started | port: ${PORT} | environment: ${process.env.NODE_ENV || 'development'} | pid: ${process.pid}`);
 
     // Start integrated workers
     setTimeout(() => {
@@ -263,4 +248,4 @@ app.listen = function (port, callback) {
 app.listen(PORT);
 logger.info('🔧 Integrated worker service configured');
 logger.info('🚀 Worker endpoints: /api/workers/status, /api/workers/start, /api/workers/stop');
-logger.info('🔧 Deployment timestamp:', { timestamp: new Date().toISOString() });
+logger.info(`🔧 Deployment timestamp: ${new Date().toISOString()}`);

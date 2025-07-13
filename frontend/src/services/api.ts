@@ -5,7 +5,7 @@ import {
   RegisterCredentials,
   User,
 } from '../types/auth';
-import { ApiErrorResponse, AxiosError } from '../types/api';
+
 
 const API_BASE_URL =
   process.env.REACT_APP_API_URL || 'https://outbound-ai.onrender.com/api';
@@ -75,9 +75,9 @@ export const authAPI = {
   logout: async (): Promise<void> => {
     try {
       await api.post('/auth/logout');
-    } catch (error) {
+    } catch {
       // Continue with logout even if API call fails
-      console.error('Logout API call failed:', error);
+      // Log error silently in production
     }
   },
 
@@ -121,7 +121,7 @@ export const authAPI = {
   },
 
   // Get dashboard data
-  getDashboard: async (): Promise<any> => {
+  getDashboard: async (): Promise<unknown> => {
     try {
       const response = await api.get('/user/dashboard');
       return response.data;

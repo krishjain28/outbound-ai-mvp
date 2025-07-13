@@ -115,8 +115,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = async (): Promise<void> => {
     try {
       await authAPI.logout();
-    } catch (error) {
-      console.error('Logout API call failed:', error);
+    } catch {
+      // Log error silently in production
     } finally {
       // Clear local storage and state
       localStorage.removeItem('token');

@@ -49,12 +49,9 @@ router.get('/dashboard', authenticate, async (req, res) => {
       data: dashboardData,
     });
   } catch (error) {
-    logger.error('Dashboard error', { 
-      error: error.message, 
-      stack: error.stack, 
-      userId: req.user?.id,
-      ip: req.ip 
-    });
+    logger.error(
+      `Dashboard error: ${error.message} | stack: ${error.stack} | userId: ${req.user?.id} | ip: ${req.ip}`
+    );
     res.status(500).json({
       success: false,
       message: 'Server error while fetching dashboard data',
@@ -118,12 +115,9 @@ router.put(
         },
       });
     } catch (error) {
-      logger.error('Update profile error', { 
-        error: error.message, 
-        stack: error.stack, 
-        userId: req.user?.id,
-        ip: req.ip 
-      });
+      logger.error(
+        `Update profile error: ${error.message} | stack: ${error.stack} | userId: ${req.user?.id} | ip: ${req.ip}`
+      );
       res.status(500).json({
         success: false,
         message: 'Server error while updating profile',
@@ -180,12 +174,9 @@ router.put(
         message: 'Password changed successfully',
       });
     } catch (error) {
-      logger.error('Change password error', { 
-      error: error.message, 
-      stack: error.stack, 
-      userId: req.user?.id,
-      ip: req.ip 
-    });
+      logger.error(
+        `Change password error: ${error.message} | stack: ${error.stack} | userId: ${req.user?.id} | ip: ${req.ip}`
+      );
       res.status(500).json({
         success: false,
         message: 'Server error while changing password',
@@ -210,12 +201,9 @@ router.delete('/account', authenticate, async (req, res) => {
       message: 'Account deactivated successfully',
     });
   } catch (error) {
-    logger.error('Deactivate account error', { 
-      error: error.message, 
-      stack: error.stack, 
-      userId: req.user?.id,
-      ip: req.ip 
-    });
+    logger.error(
+      `Deactivate account error: ${error.message} | stack: ${error.stack} | userId: ${req.user?.id} | ip: ${req.ip}`
+    );
     res.status(500).json({
       success: false,
       message: 'Server error while deactivating account',
@@ -254,12 +242,9 @@ router.get('/all', authenticate, authorize('admin'), async (req, res) => {
       },
     });
   } catch (error) {
-    logger.error('Get all users error', { 
-      error: error.message, 
-      stack: error.stack, 
-      userId: req.user?.id,
-      ip: req.ip 
-    });
+    logger.error(
+      `Get all users error: ${error.message} | stack: ${error.stack} | userId: ${req.user?.id} | ip: ${req.ip}`
+    );
     res.status(500).json({
       success: false,
       message: 'Server error while fetching users',
@@ -309,13 +294,9 @@ router.put(
         },
       });
     } catch (error) {
-      logger.error('Update user role error', { 
-      error: error.message, 
-      stack: error.stack, 
-      userId: req.user?.id,
-      targetUserId: req.params.id,
-      ip: req.ip 
-    });
+      logger.error(
+        `Update user role error: ${error.message} | stack: ${error.stack} | userId: ${req.user?.id} | ip: ${req.ip}`
+      );
       res.status(500).json({
         success: false,
         message: 'Server error while updating user role',

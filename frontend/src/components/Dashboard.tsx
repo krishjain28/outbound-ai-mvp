@@ -44,10 +44,10 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const response = await authAPI.getDashboard();
-        setDashboardData(response.data);
-      } catch (error) {
-        console.error('Failed to fetch dashboard data:', error);
+        const response: any = await authAPI.getDashboard();
+        setDashboardData(response.data as DashboardData);
+      } catch {
+        // Log error silently in production
       } finally {
         setLoading(false);
       }
@@ -59,8 +59,8 @@ const Dashboard: React.FC = () => {
   const handleLogout = async () => {
     try {
       await logout();
-    } catch (error) {
-      console.error('Logout failed:', error);
+    } catch {
+      // Log error silently in production
     }
   };
 

@@ -369,11 +369,7 @@ const apiDocsHTML = `
 
 // API documentation route
 router.get('/', asyncHandler(async (req, res) => {
-  logger.info('API documentation accessed', { 
-    ip: req.ip, 
-    userAgent: req.get('User-Agent'),
-    timestamp: new Date().toISOString()
-  });
+  logger.info(`API documentation accessed | ip: ${req.ip} | userAgent: ${req.get('User-Agent')}`);
   
   res.setHeader('Content-Type', 'text/html');
   res.send(apiDocsHTML);

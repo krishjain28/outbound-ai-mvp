@@ -1,104 +1,67 @@
-const winston = require('winston');
-const DailyRotateFile = require('winston-daily-rotate-file');
 const path = require('path');
+const fs = require('fs');
 
 // Ensure logs directory exists
 const logsDir = path.join(__dirname, '../logs');
-
-// Custom format for better readability
-const customFormat = winston.format.combine(
-  winston.format.timestamp({
-    format: 'YYYY-MM-DD HH:mm:ss'
-  }),
-  winston.format.errors({ stack: true }),
-  winston.format.json(),
-  winston.format.prettyPrint()
-);
-
-// Console format for development
-const consoleFormat = winston.format.combine(
-  winston.format.colorize(),
-  winston.format.timestamp({
-    format: 'HH:mm:ss'
-  }),
-  winston.format.printf(({ timestamp, level, message, service, ...meta }) => {
-    let logMessage = `${timestamp} [${level}]`;
-    
-    if (service) {
-      logMessage += ` [${service}]`;
-    }
-    
-    logMessage += `: ${message}`;
-    
-    // Add metadata if present
-    if (Object.keys(meta).length > 0) {
-      logMessage += ` ${JSON.stringify(meta)}`;
-    }
-    
-    return logMessage;
-  })
-);
-
-// Create transports
-const transports = [];
-
-// Console transport for development
-if (process.env.NODE_ENV !== 'production') {
-  transports.push(
-    new winston.transports.Console({
-      format: consoleFormat,
-      level: 'debug'
-    })
-  );
+if (!fs.existsSync(logsDir)) {
+  fs.mkdirSync(logsDir, { recursive: true });
 }
 
-// File transports for all environments
-transports.push(
-  // Error logs
-  new DailyRotateFile({
-    filename: path.join(logsDir, 'error-%DATE%.log'),
-    datePattern: 'YYYY-MM-DD',
-    level: 'error',
-    format: customFormat,
-    maxSize: '20m',
-    maxFiles: '14d',
-    auditFile: path.join(logsDir, 'error-audit.json')
-  }),
-  
-  // Combined logs
-  new DailyRotateFile({
-    filename: path.join(logsDir, 'combined-%DATE%.log'),
-    datePattern: 'YYYY-MM-DD',
-    format: customFormat,
-    maxSize: '20m',
-    maxFiles: '14d',
-    auditFile: path.join(logsDir, 'combined-audit.json')
-  }),
-  
-  // API logs for call-related activities
-  new DailyRotateFile({
-    filename: path.join(logsDir, 'api-%DATE%.log'),
-    datePattern: 'YYYY-MM-DD',
-    format: customFormat,
-    maxSize: '20m',
-    maxFiles: '30d',
-    auditFile: path.join(logsDir, 'api-audit.json'),
-    level: 'info'
-  })
-);
+// Simple console logger to replace Winston
+class SimpleLogger {
+  constructor(service = 'app') {
+    this.service = service;
+  }
 
-// Create the logger
-const logger = winston.createLogger({
-  level: process.env.LOG_LEVEL || (process.env.NODE_ENV === 'production' ? 'info' : 'debug'),
-  format: customFormat,
-  defaultMeta: { service: 'outbound-ai-backend' },
-  transports,
-  exitOnError: false
-});
+  _log(level, message) {
+    const timestamp = new Date().toISOString();
+    const logMessage = `${timestamp} [${level}] [${this.service}]: ${message}`;
+    
+    // Console output
+    if (process.env.NODE_ENV !== 'production') {
+      const colors = {
+        error: '\x1b[31m', // red
+        warn: '\x1b[33m',  // yellow
+        info: '\x1b[36m',  // cyan
+        debug: '\x1b[35m'  // magenta
+      };
+      console.log(`${colors[level] || ''}${logMessage}\x1b[0m`);
+    } else {
+      console.log(logMessage);
+    }
+    
+    // File output for errors
+    if (level === 'error') {
+      const errorLogFile = path.join(logsDir, `error-${new Date().toISOString().split('T')[0]}.log`);
+      fs.appendFileSync(errorLogFile, logMessage + '\n');
+    }
+  }
+
+  error(message) {
+    this._log('error', message);
+  }
+
+  warn(message) {
+    this._log('warn', message);
+  }
+
+  info(message) {
+    this._log('info', message);
+  }
+
+  debug(message) {
+    if (process.env.NODE_ENV !== 'production') {
+      this._log('debug', message);
+    }
+  }
+}
+
+// Create main logger
+const logger = new SimpleLogger('outbound-ai-backend');
 
 // Create specialized loggers for different services
 const createServiceLogger = (serviceName) => {
-  return logger.child({ service: serviceName });
+  return new SimpleLogger(serviceName);
 };
 
 // Helper functions for common logging patterns
@@ -117,28 +80,16 @@ const loggers = {
   security: createServiceLogger('security'),
   monitoring: createServiceLogger('monitoring'),
   
-  // Helper methods
+  // Helper methods - ALL STRING ONLY
   logApiRequest: (req, res, next) => {
     const start = Date.now();
     const apiLogger = createServiceLogger('api');
     
-    apiLogger.info('API Request', {
-      method: req.method,
-      url: req.url,
-      ip: req.ip,
-      userAgent: req.get('User-Agent'),
-      requestId: req.headers['x-request-id']
-    });
+    apiLogger.info(`API Request | method: ${req.method} | url: ${req.url} | ip: ${req.ip} | userAgent: ${req.get('User-Agent')} | requestId: ${req.headers['x-request-id']}`);
     
     res.on('finish', () => {
       const duration = Date.now() - start;
-      apiLogger.info('API Response', {
-        method: req.method,
-        url: req.url,
-        statusCode: res.statusCode,
-        duration: `${duration}ms`,
-        requestId: req.headers['x-request-id']
-      });
+      apiLogger.info(`API Response | method: ${req.method} | url: ${req.url} | statusCode: ${res.statusCode} | duration: ${duration}ms | requestId: ${req.headers['x-request-id']}`);
     });
     
     if (next) next();
@@ -146,77 +97,61 @@ const loggers = {
   
   logCallEvent: (event, callId, data = {}) => {
     const callLogger = createServiceLogger('calls');
-    callLogger.info(`Call Event: ${event}`, {
-      callId,
-      event,
-      ...data
-    });
+    const dataStr = Object.keys(data).length > 0 ? ` | data: ${JSON.stringify(data)}` : '';
+    callLogger.info(`Call Event: ${event} | callId: ${callId}${dataStr}`);
   },
   
-  logError: (error, context = {}) => {
-    logger.error('Application Error', {
-      error: error.message,
-      stack: error.stack,
-      ...context
-    });
+  logError: (error, context = '') => {
+    // Only log safe string information to avoid circular references
+    const errorMessage = error.message || 'Unknown error';
+    const errorName = error.name || 'Error';
+    const errorStack = error.stack ? error.stack.split('\n')[0] : 'No stack trace';
+    
+    // Use the context string directly if provided
+    const contextStr = context ? ` | ${context}` : '';
+    
+    logger.error(`Application Error: ${errorName} - ${errorMessage}${contextStr} | Stack: ${errorStack}`);
   },
   
   logSpeechEvent: (event, callId, data = {}) => {
     const speechLogger = createServiceLogger('speech');
-    speechLogger.info(`Speech Event: ${event}`, {
-      callId,
-      event,
-      ...data
-    });
+    const dataStr = Object.keys(data).length > 0 ? ` | data: ${JSON.stringify(data)}` : '';
+    speechLogger.info(`Speech Event: ${event} | callId: ${callId}${dataStr}`);
   },
   
   logConversationEvent: (event, callId, data = {}) => {
     const conversationLogger = createServiceLogger('conversation');
-    conversationLogger.info(`Conversation Event: ${event}`, {
-      callId,
-      event,
-      ...data
-    });
+    const dataStr = Object.keys(data).length > 0 ? ` | data: ${JSON.stringify(data)}` : '';
+    conversationLogger.info(`Conversation Event: ${event} | callId: ${callId}${dataStr}`);
   },
   
   logWorkerEvent: (event, data = {}) => {
     const workerLogger = createServiceLogger('worker');
-    workerLogger.info(`Worker Event: ${event}`, {
-      event,
-      ...data
-    });
+    const dataStr = Object.keys(data).length > 0 ? ` | data: ${JSON.stringify(data)}` : '';
+    workerLogger.info(`Worker Event: ${event}${dataStr}`);
   },
   
   logDatabaseEvent: (event, data = {}) => {
     const dbLogger = createServiceLogger('database');
-    dbLogger.info(`Database Event: ${event}`, {
-      event,
-      ...data
-    });
+    const dataStr = Object.keys(data).length > 0 ? ` | data: ${JSON.stringify(data)}` : '';
+    dbLogger.info(`Database Event: ${event}${dataStr}`);
   },
   
   logSecurityEvent: (event, data = {}) => {
     const securityLogger = createServiceLogger('security');
-    securityLogger.warn(`Security Event: ${event}`, {
-      event,
-      ...data
-    });
+    const dataStr = Object.keys(data).length > 0 ? ` | data: ${JSON.stringify(data)}` : '';
+    securityLogger.warn(`Security Event: ${event}${dataStr}`);
   }
 };
 
-// Handle uncaught exceptions and rejections
-logger.exceptions.handle(
-  new winston.transports.File({ 
-    filename: path.join(logsDir, 'exceptions.log'),
-    format: customFormat
-  })
-);
+// Global error handlers
+process.on('uncaughtException', (error) => {
+  logger.error(`Uncaught Exception: ${error.message} | stack: ${error.stack}`);
+  process.exit(1);
+});
 
 process.on('unhandledRejection', (reason, promise) => {
-  logger.error('Unhandled Rejection', {
-    reason: reason.toString(),
-    promise: promise.toString()
-  });
+  logger.error(`Unhandled Rejection: ${reason} | promise: ${promise.toString()}`);
 });
 
 module.exports = loggers; 

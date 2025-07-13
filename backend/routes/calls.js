@@ -46,18 +46,12 @@ const validateEnvironmentVariables = () => {
   if (!process.env.ELEVENLABS_API_KEY) optional.push('ELEVENLABS_API_KEY');
 
   if (missing.length > 0) {
-    logger.error('Missing required environment variables', {
-      missing: missing.join(', '),
-      instructions: 'Please create a .env file in the backend directory with required variables'
-    });
+    logger.error(`Missing required environment variables: ${missing.join(', ')}`);
     return false;
   }
 
   if (optional.length > 0) {
-    logger.info('Optional environment variables not set', {
-      optional: optional.join(', '),
-      note: 'For enhanced features, add these to your .env file'
-    });
+    logger.info(`Optional environment variables not set: ${optional.join(', ')}`);
   }
 
   return true;

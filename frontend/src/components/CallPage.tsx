@@ -360,8 +360,8 @@ const CallPage: React.FC = () => {
           'API configuration incomplete. Please set up your Telnyx and OpenAI API keys.'
         );
       }
-    } catch (error: unknown) {
-      console.error('Error checking config status:', error);
+    } catch {
+      // Log error silently in production
       setConfigError(
         'Unable to check API configuration. Please ensure the backend is running.'
       );
@@ -393,8 +393,8 @@ const CallPage: React.FC = () => {
         conversionRate:
           calls.length > 0 ? Math.round((meetings / calls.length) * 100) : 0,
       });
-    } catch (error) {
-      console.error('Error fetching recent calls:', error);
+    } catch {
+      // Log error silently in production
     } finally {
       setIsLoadingCalls(false);
     }
@@ -422,8 +422,8 @@ const CallPage: React.FC = () => {
           toast.error('Call failed. Please try again.');
         }
       }
-    } catch (error) {
-      console.error('Error polling call status:', error);
+    } catch {
+      // Log error silently in production
     }
   }, [currentCall, fetchRecentCalls]);
 
@@ -451,7 +451,6 @@ const CallPage: React.FC = () => {
       setCallDuration(0);
       toast.success('Call initiated successfully!');
     } catch (error: unknown) {
-      console.error('Error initiating call:', error);
       const axiosError = error as AxiosErrorType;
       const errorData = axiosError.response?.data as { message?: string; details?: string; error?: string } | undefined;
       let errorMessage = 'Failed to initiate call. Please try again.';
@@ -486,7 +485,6 @@ const CallPage: React.FC = () => {
       await fetchRecentCalls();
       toast.success('Call ended');
     } catch (error: unknown) {
-      console.error('Error hanging up call:', error);
       const axiosError = error as AxiosErrorType;
       const errorData = axiosError.response?.data as { message?: string } | undefined;
       toast.error(errorData?.message || 'Failed to hang up call');

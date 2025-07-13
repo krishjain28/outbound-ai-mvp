@@ -187,34 +187,27 @@ function logErrorWithContext(error, context = {}) {
   const errorType = classifyError(error);
   const isOperational = error instanceof AppError && error.isOperational;
   
-  const logContext = {
-    errorType,
-    isOperational,
-    statusCode: error.statusCode || StatusCodes[errorType],
-    ...context
-  };
+  // Create context string instead of object
+  let contextStr = `errorType: ${errorType} | isOperational: ${isOperational} | statusCode: ${error.statusCode || StatusCodes[errorType]}`;
   
   // Add request context if available
   if (context.req) {
-    logContext.request = {
-      method: context.req.method,
-      url: context.req.url,
-      ip: context.req.ip,
-      userAgent: context.req.get('User-Agent'),
-      userId: context.req.user?.id
-    };
+    contextStr += ` | method: ${context.req.method} | url: ${context.req.url} | ip: ${context.req.ip} | userAgent: ${context.req.get('User-Agent')} | userId: ${context.req.user?.id}`;
   }
+  
+  // Add other context properties
+  Object.keys(context).forEach(key => {
+    if (key !== 'req' && typeof context[key] === 'string' || typeof context[key] === 'number' || typeof context[key] === 'boolean') {
+      contextStr += ` | ${key}: ${context[key]}`;
+    }
+  });
   
   // Log security events for auth/authorization errors
   if (errorType === ErrorTypes.AUTHENTICATION || errorType === ErrorTypes.AUTHORIZATION) {
-    logSecurityEvent('Security Error', {
-      errorType,
-      message: error.message,
-      ...logContext
-    });
+    logSecurityEvent(`Security Error: ${errorType} - ${error.message} | ${contextStr}`);
   }
   
-  logError(error, logContext);
+  logError(error, contextStr);
 }
 
 // Express error handling middleware
