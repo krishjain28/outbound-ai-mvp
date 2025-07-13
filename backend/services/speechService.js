@@ -1,13 +1,10 @@
 const { createClient } = require('@deepgram/sdk');
 const { ElevenLabsClient } = require('@elevenlabs/elevenlabs-js');
-const WebSocket = require('ws');
 const axios = require('axios');
 const { speech: logger } = require('../utils/logger');
 const { 
   handleSpeechError, 
-  handleApiError, 
-  ConfigurationError,
-  validateConfiguration 
+  handleApiError
 } = require('../utils/errorHandler');
 
 class SpeechService {
@@ -143,8 +140,7 @@ class SpeechService {
 
       // Start Telnyx media streaming directly to Deepgram
       const streamResponse = await this.startTelnyxMediaStreamDirect(
-        callControlId,
-        deepgramLive
+        callControlId
       );
 
       if (!streamResponse.success) {
@@ -168,7 +164,7 @@ class SpeechService {
   /**
    * Start media streaming from Telnyx directly to Deepgram
    */
-  async startTelnyxMediaStreamDirect(callControlId, deepgramLive) {
+  async startTelnyxMediaStreamDirect(callControlId) {
     try {
       const response = await axios.post(
         `https://api.telnyx.com/v2/calls/${callControlId}/actions/streaming_start`,

@@ -2,7 +2,6 @@ const OpenAI = require('openai');
 const { conversation: logger } = require('../utils/logger');
 const { 
   handleConversationError, 
-  ConfigurationError,
   validateConfiguration 
 } = require('../utils/errorHandler');
 
@@ -192,7 +191,7 @@ Remember: You're having a real conversation with a real person. Be human, be gen
       });
 
       // Update conversation stage based on content
-      this.updateConversationStage(context, customerInput, aiResponse);
+      this.updateConversationStage(context, customerInput);
 
       // Extract qualification data
       this.extractQualificationData(context, customerInput);
@@ -237,7 +236,7 @@ Remember: You're having a real conversation with a real person. Be human, be gen
   /**
    * Update conversation stage based on content
    */
-  updateConversationStage(context, customerInput, aiResponse) {
+  updateConversationStage(context, customerInput) {
     const input = customerInput.toLowerCase();
 
     // Stage progression logic
@@ -384,7 +383,7 @@ Remember: You're having a real conversation with a real person. Be human, be gen
    */
   cleanupConversation(callId) {
     this.conversationMemory.delete(callId);
-    console.log(`🧹 Cleaned up conversation memory for call ${callId}`);
+    logger.info(`🧹 Cleaned up conversation memory for call ${callId}`);
   }
 
   /**

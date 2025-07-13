@@ -53,8 +53,8 @@ async function testOptimizedCallSystem() {
     const requiredEnvVars = ['TELNYX_API_KEY', 'OPENAI_API_KEY', 'BACKEND_URL'];
     const optionalEnvVars = ['DEEPGRAM_API_KEY', 'ELEVENLABS_API_KEY'];
 
-    let missingRequired = [];
-    let missingOptional = [];
+    const missingRequired = [];
+    const missingOptional = [];
 
     requiredEnvVars.forEach(varName => {
       if (

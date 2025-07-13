@@ -12,11 +12,8 @@ const conversationService = require('../services/conversationService');
 const { calls: logger } = require('../utils/logger');
 const { 
   asyncHandler, 
-  handleApiError, 
-  handleDatabaseError,
   ValidationError,
   ConfigurationError,
-  validateRequired,
   validateConfiguration 
 } = require('../utils/errorHandler');
 
@@ -817,7 +814,6 @@ router.post('/deepgram-stream', async (req, res) => {
 // Generate quick AI response for faster conversation
 async function generateQuickResponse(call, userResponse) {
   try {
-    const conversationHistory = call.conversation || [];
     const leadName = call.leadName || 'there';
 
     // Use predefined quick responses for common scenarios

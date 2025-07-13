@@ -1,4 +1,4 @@
-const { logError, logSecurityEvent, logApiRequest } = require('./logger');
+const { logError, logSecurityEvent } = require('./logger');
 
 // Error types for classification
 const ErrorTypes = {
@@ -213,9 +213,6 @@ function logErrorWithContext(error, context = {}) {
       ...logContext
     });
   }
-  
-  // Use appropriate log level
-  const logLevel = isOperational ? 'warn' : 'error';
   
   logError(error, logContext);
 }

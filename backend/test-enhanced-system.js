@@ -75,7 +75,7 @@ async function testEnhancedSystem() {
     };
 
     // Check required environment variables
-    let requiredMissing = [];
+    const requiredMissing = [];
     for (const [key, value] of Object.entries(requiredEnvs)) {
       if (value) {
         colorLog('green', `✅ ${key}: configured`);
@@ -96,7 +96,7 @@ async function testEnhancedSystem() {
     }
 
     // Check enhanced environment variables
-    let enhancedMissing = [];
+    const enhancedMissing = [];
     for (const [key, value] of Object.entries(enhancedEnvs)) {
       if (value) {
         colorLog('green', `✅ ${key}: configured`);

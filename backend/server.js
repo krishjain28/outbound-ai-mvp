@@ -9,9 +9,7 @@ const { app: logger, database: dbLogger, worker: workerLogger } = require('./uti
 const { 
   errorHandler: globalErrorHandler, 
   asyncHandler, 
-  handleDatabaseError,
-  validateConfiguration,
-  ConfigurationError 
+  handleDatabaseError
 } = require('./utils/errorHandler');
 
 // Import production middleware
@@ -73,9 +71,9 @@ const connectDB = async () => {
 
     dbLogger.info('MongoDB connected successfully');
   } catch (error) {
-    const dbError = handleDatabaseError(error, {
+    handleDatabaseError(error, {
       operation: 'connection',
-      mongoURI: mongoURI.replace(/\/\/.*@/, '//***:***@')
+      mongoURI: (process.env.MONGODB_URI || 'mongodb://localhost:27017/outbound-ai-mvp').replace(/\/\/.*@/, '//***:***@')
     });
     
     dbLogger.info('Possible solutions:', {
