@@ -6,7 +6,7 @@ services:
     plan: starter
     region: oregon
     buildCommand: cd backend && npm install
-    startCommand: cd backend && npm start
+    startCommand: cd backend && node server.js
     healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV
