@@ -8,7 +8,7 @@ import {
 
 
 const API_BASE_URL =
-  process.env.REACT_APP_API_URL || 'https://outbound-ai.onrender.com/api';
+  process.env.REACT_APP_API_URL || 'https://outbound-ai-backend.onrender.com/api';
 
 // Create axios instance
 const api = axios.create({
