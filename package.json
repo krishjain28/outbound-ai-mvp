@@ -9,7 +9,7 @@
     "client": "cd frontend && npm start",
     "install-all": "npm install && cd backend && npm install && cd ../frontend && npm install",
     "build": "cd backend && npm install",
-    "start": "node index.js"
+    "start": "cd backend && npm start"
   },
   "keywords": ["outbound", "ai", "authentication", "mvp"],
   "author": "",
