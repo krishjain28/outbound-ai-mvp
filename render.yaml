@@ -5,8 +5,8 @@ services:
     runtime: node
     plan: starter
     region: oregon
-    buildCommand: npm run build
-    startCommand: npm start
+    buildCommand: cd backend && npm install --production
+    startCommand: cd backend && node server.js
     healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV
@@ -31,70 +31,6 @@ services:
         sync: false
       - key: TELNYX_CONNECTION_ID
         sync: false
-      - key: OPENAI_API_KEY
-        sync: false
-      - key: DEEPGRAM_API_KEY
-        sync: false
-      - key: ELEVENLABS_API_KEY
-        sync: false
-      - key: ELEVENLABS_VOICE_ID
-        value: pNInz6obpgDQGcFmaJgB
-    autoDeploy: true
-    branch: main
-    rootDir: .
-    
-  # Background Worker for Call Processing
-  - type: worker
-    name: outbound-ai-call-worker
-    runtime: node
-    plan: starter
-    region: oregon
-    buildCommand: npm run build
-    startCommand: cd backend && node workers/callWorker.js
-    envVars:
-      - key: NODE_ENV
-        value: production
-      - key: MONGODB_URI
-        fromDatabase:
-          name: outboundaimongodb
-          property: connectionString
-      - key: JWT_SECRET
-        generateValue: true
-      - key: TELNYX_API_KEY
-        sync: false
-      - key: TELNYX_PHONE_NUMBER
-        sync: false
-      - key: TELNYX_CONNECTION_ID
-        sync: false
-      - key: OPENAI_API_KEY
-        sync: false
-      - key: DEEPGRAM_API_KEY
-        sync: false
-      - key: ELEVENLABS_API_KEY
-        sync: false
-      - key: ELEVENLABS_VOICE_ID
-        value: pNInz6obpgDQGcFmaJgB
-      - key: BACKEND_URL
-        value: https://outbound-ai-backend.onrender.com
-    autoDeploy: true
-    branch: main
-    rootDir: .
-    
-  # Background Worker for AI Processing
-  - type: worker
-    name: outbound-ai-conversation-worker
-    runtime: node
-    plan: starter
-    region: oregon
-    buildCommand: npm run build
-    startCommand: cd backend && node workers/conversationWorker.js
-    envVars:
-      - key: NODE_ENV
-        value: production
-      - key: MONGODB_URI
-        fromDatabase:
-          name: outboundaimongodb
-          property: connectionString
       - key: OPENAI_API_KEY
         sync: false
       - key: DEEPGRAM_API_KEY
