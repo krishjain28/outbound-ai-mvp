@@ -99,6 +99,8 @@ const corsOptions = {
       process.env.FRONTEND_URL,
       'https://outbound-ai-frontend.vercel.app',
       'https://outbound-ai.vercel.app',
+      'https://outbound-ai.onrender.com',
+      'http://outbound-ai.onrender.com',
       'http://localhost:3000',
       'http://localhost:3001',
     ];
@@ -106,10 +108,15 @@ const corsOptions = {
     // Allow requests with no origin (mobile apps, etc.)
     if (!origin) return callback(null, true);
 
+    // Allow all subdomains of outbound-ai.onrender.com
+    if (origin && origin.includes('outbound-ai.onrender.com')) {
+      return callback(null, true);
+    }
+
     if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      console.warn(`CORS blocked request from origin: ${origin}`);
+      logger.warn(`CORS blocked request from origin: ${origin}`);
       callback(new Error('Not allowed by CORS'));
     }
   },
