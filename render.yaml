@@ -8,15 +8,16 @@ services:
     buildCommand: cd backend && npm install --production
     startCommand: cd backend && node server.js
     healthCheckPath: /health
+    autoDeploy: true
+    branch: main
+    rootDir: .
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
         value: 10000
       - key: MONGODB_URI
-        fromDatabase:
-          name: outboundaimongodb
-          property: connectionString
+        value: mongodb+srv://krishjain:Krish%40123@cluster0.v7ckm.mongodb.net/outbound-ai-mvp?retryWrites=true&w=majority
       - key: JWT_SECRET
         generateValue: true
       - key: JWT_EXPIRE
@@ -39,9 +40,6 @@ services:
         sync: false
       - key: ELEVENLABS_VOICE_ID
         value: pNInz6obpgDQGcFmaJgB
-    autoDeploy: true
-    branch: main
-    rootDir: .
 
 databases:
   - name: outboundaimongodb
