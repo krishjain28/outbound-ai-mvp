@@ -15,17 +15,17 @@ class CallWorker {
 
   async start() {
     console.log('🔄 Starting Call Worker...');
-    
+
     // Connect to MongoDB
     await this.connectDB();
-    
+
     // Initialize services
     await this.initializeServices();
-    
+
     // Start processing queue
     this.isRunning = true;
     this.processQueue();
-    
+
     console.log('✅ Call Worker started successfully');
   }
 
@@ -45,16 +45,18 @@ class CallWorker {
   async initializeServices() {
     // Initialize speech and conversation services
     console.log('🔧 Initializing services...');
-    
+
     // Validate required environment variables
     const required = ['TELNYX_API_KEY', 'OPENAI_API_KEY'];
     const missing = required.filter(key => !process.env[key]);
-    
+
     if (missing.length > 0) {
-      console.error(`❌ Missing required environment variables: ${missing.join(', ')}`);
+      console.error(
+        `❌ Missing required environment variables: ${missing.join(', ')}`
+      );
       process.exit(1);
     }
-    
+
     console.log('✅ Services initialized');
   }
 
@@ -66,8 +68,8 @@ class CallWorker {
           status: { $in: ['initiated', 'ringing', 'answered'] },
           $or: [
             { lastProcessed: { $exists: false } },
-            { lastProcessed: { $lt: new Date(Date.now() - 30000) } } // 30 seconds ago
-          ]
+            { lastProcessed: { $lt: new Date(Date.now() - 30000) } }, // 30 seconds ago
+          ],
         }).limit(this.maxConcurrentCalls - this.currentCalls);
 
         for (const call of pendingCalls) {
@@ -90,10 +92,10 @@ class CallWorker {
 
   async processCall(call) {
     this.currentCalls++;
-    
+
     try {
       console.log(`🔄 Processing call ${call._id} - Status: ${call.status}`);
-      
+
       // Update last processed timestamp
       call.lastProcessed = new Date();
       await call.save();
@@ -109,11 +111,13 @@ class CallWorker {
           await this.handleAnsweredCall(call);
           break;
         default:
-          console.log(`ℹ️  Call ${call._id} in status ${call.status} - no action needed`);
+          console.log(
+            `ℹ️  Call ${call._id} in status ${call.status} - no action needed`
+          );
       }
     } catch (error) {
       console.error(`❌ Error processing call ${call._id}:`, error);
-      
+
       // Update call with error status
       call.status = 'failed';
       call.outcome = 'system_error';
@@ -127,7 +131,9 @@ class CallWorker {
   async handleInitiatedCall(call) {
     // Check if call has been initiated with Telnyx
     if (!call.callId) {
-      console.log(`⚠️  Call ${call._id} missing Telnyx call ID - marking as failed`);
+      console.log(
+        `⚠️  Call ${call._id} missing Telnyx call ID - marking as failed`
+      );
       call.status = 'failed';
       call.outcome = 'system_error';
       call.endTime = new Date();
@@ -137,15 +143,18 @@ class CallWorker {
 
     // Check call status with Telnyx
     try {
-      const response = await axios.get(`https://api.telnyx.com/v2/calls/${call.callId}`, {
-        headers: {
-          'Authorization': `Bearer ${process.env.TELNYX_API_KEY}`,
-          'Content-Type': 'application/json'
+      const response = await axios.get(
+        `https://api.telnyx.com/v2/calls/${call.callId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${process.env.TELNYX_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
         }
-      });
+      );
 
       const telnyxCall = response.data.data;
-      
+
       if (telnyxCall.call_state === 'ringing') {
         call.status = 'ringing';
         await call.save();
@@ -157,13 +166,17 @@ class CallWorker {
         console.log(`✅ Call ${call._id} answered`);
       } else if (['completed', 'failed'].includes(telnyxCall.call_state)) {
         call.status = 'completed';
-        call.outcome = telnyxCall.call_state === 'failed' ? 'failed' : 'completed';
+        call.outcome =
+          telnyxCall.call_state === 'failed' ? 'failed' : 'completed';
         call.endTime = new Date();
         await call.save();
         console.log(`🔚 Call ${call._id} ended: ${call.outcome}`);
       }
     } catch (error) {
-      console.error(`❌ Error checking Telnyx call status for ${call._id}:`, error);
+      console.error(
+        `❌ Error checking Telnyx call status for ${call._id}:`,
+        error
+      );
     }
   }
 
@@ -180,14 +193,15 @@ class CallWorker {
       const maxCallDuration = 10 * 60 * 1000; // 10 minutes
 
       if (timeSinceAnswer > maxCallDuration) {
-        console.log(`⏰ Call ${call._id} exceeded maximum duration - ending call`);
+        console.log(
+          `⏰ Call ${call._id} exceeded maximum duration - ending call`
+        );
         await this.endCall(call, 'timeout');
         return;
       }
 
       // Process any pending conversation updates
       await this.processConversationUpdates(call);
-
     } catch (error) {
       console.error(`❌ Error handling answered call ${call._id}:`, error);
     }
@@ -195,11 +209,12 @@ class CallWorker {
 
   async processConversationUpdates(call) {
     // Check for conversation updates that need processing
-    const lastConversationEntry = call.conversation[call.conversation.length - 1];
-    
+    const lastConversationEntry =
+      call.conversation[call.conversation.length - 1];
+
     if (lastConversationEntry && lastConversationEntry.needsProcessing) {
       console.log(`🤖 Processing conversation update for call ${call._id}`);
-      
+
       // Generate AI response
       const aiResponse = await conversationService.generateResponse(
         call.conversation,
@@ -212,12 +227,12 @@ class CallWorker {
         speaker: 'ai',
         message: aiResponse,
         timestamp: new Date(),
-        needsProcessing: false
+        needsProcessing: false,
       });
 
       // Send response via speech service
       await speechService.speak(call.callId, aiResponse);
-      
+
       // Update call
       lastConversationEntry.needsProcessing = false;
       await call.save();
@@ -227,7 +242,6 @@ class CallWorker {
   async processWebhookEvents() {
     // Process any webhook events that need background processing
     // This could include call recordings, transcriptions, etc.
-    
     // For now, just log that we're checking
     // console.log('🔍 Checking for webhook events to process...');
   }
@@ -235,12 +249,16 @@ class CallWorker {
   async endCall(call, reason) {
     try {
       // End the call via Telnyx
-      await axios.post(`https://api.telnyx.com/v2/calls/${call.callId}/actions/hangup`, {}, {
-        headers: {
-          'Authorization': `Bearer ${process.env.TELNYX_API_KEY}`,
-          'Content-Type': 'application/json'
+      await axios.post(
+        `https://api.telnyx.com/v2/calls/${call.callId}/actions/hangup`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${process.env.TELNYX_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
         }
-      });
+      );
 
       // Update call record
       call.status = 'completed';
@@ -261,13 +279,13 @@ class CallWorker {
   async stop() {
     console.log('🛑 Stopping Call Worker...');
     this.isRunning = false;
-    
+
     // Wait for current calls to finish
     while (this.currentCalls > 0) {
       console.log(`⏳ Waiting for ${this.currentCalls} calls to finish...`);
       await this.sleep(1000);
     }
-    
+
     // Close MongoDB connection
     await mongoose.connection.close();
     console.log('✅ Call Worker stopped');
@@ -302,4 +320,4 @@ const main = async () => {
   }
 };
 
-main(); 
+main();

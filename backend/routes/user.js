@@ -12,7 +12,7 @@ const handleValidationErrors = (req, res, next) => {
     return res.status(400).json({
       success: false,
       message: 'Validation failed',
-      errors: errors.array()
+      errors: errors.array(),
     });
   }
   next();
@@ -24,7 +24,7 @@ const handleValidationErrors = (req, res, next) => {
 router.get('/dashboard', authenticate, async (req, res) => {
   try {
     const user = req.user;
-    
+
     // You can add more dashboard-specific data here
     const dashboardData = {
       user: {
@@ -33,23 +33,25 @@ router.get('/dashboard', authenticate, async (req, res) => {
         email: user.email,
         role: user.role,
         lastLogin: user.lastLogin,
-        memberSince: user.createdAt
+        memberSince: user.createdAt,
       },
       stats: {
         // Add any relevant statistics here
-        accountAge: Math.floor((Date.now() - user.createdAt) / (1000 * 60 * 60 * 24)) // days
-      }
+        accountAge: Math.floor(
+          (Date.now() - user.createdAt) / (1000 * 60 * 60 * 24)
+        ), // days
+      },
     };
 
     res.json({
       success: true,
-      data: dashboardData
+      data: dashboardData,
     });
   } catch (error) {
     console.error('Dashboard error:', error);
     res.status(500).json({
       success: false,
-      message: 'Server error while fetching dashboard data'
+      message: 'Server error while fetching dashboard data',
     });
   }
 });
@@ -57,52 +59,59 @@ router.get('/dashboard', authenticate, async (req, res) => {
 // @route   PUT /api/user/change-password
 // @desc    Change user password
 // @access  Private
-router.put('/change-password', authenticate, [
-  body('currentPassword')
-    .notEmpty()
-    .withMessage('Current password is required'),
-  body('newPassword')
-    .isLength({ min: 6 })
-    .withMessage('New password must be at least 6 characters long')
-    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
-    .withMessage('New password must contain at least one uppercase letter, one lowercase letter, and one number'),
-  body('confirmPassword')
-    .custom((value, { req }) => {
+router.put(
+  '/change-password',
+  authenticate,
+  [
+    body('currentPassword')
+      .notEmpty()
+      .withMessage('Current password is required'),
+    body('newPassword')
+      .isLength({ min: 6 })
+      .withMessage('New password must be at least 6 characters long')
+      .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
+      .withMessage(
+        'New password must contain at least one uppercase letter, one lowercase letter, and one number'
+      ),
+    body('confirmPassword').custom((value, { req }) => {
       if (value !== req.body.newPassword) {
         throw new Error('Password confirmation does not match');
       }
       return true;
-    })
-], handleValidationErrors, async (req, res) => {
-  try {
-    const { currentPassword, newPassword } = req.body;
-    const user = await User.findById(req.user._id).select('+password');
+    }),
+  ],
+  handleValidationErrors,
+  async (req, res) => {
+    try {
+      const { currentPassword, newPassword } = req.body;
+      const user = await User.findById(req.user._id).select('+password');
 
-    // Verify current password
-    const isMatch = await user.comparePassword(currentPassword);
-    if (!isMatch) {
-      return res.status(400).json({
+      // Verify current password
+      const isMatch = await user.comparePassword(currentPassword);
+      if (!isMatch) {
+        return res.status(400).json({
+          success: false,
+          message: 'Current password is incorrect',
+        });
+      }
+
+      // Update password
+      user.password = newPassword;
+      await user.save();
+
+      res.json({
+        success: true,
+        message: 'Password changed successfully',
+      });
+    } catch (error) {
+      console.error('Change password error:', error);
+      res.status(500).json({
         success: false,
-        message: 'Current password is incorrect'
+        message: 'Server error while changing password',
       });
     }
-
-    // Update password
-    user.password = newPassword;
-    await user.save();
-
-    res.json({
-      success: true,
-      message: 'Password changed successfully'
-    });
-  } catch (error) {
-    console.error('Change password error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Server error while changing password'
-    });
   }
-});
+);
 
 // @route   DELETE /api/user/account
 // @desc    Deactivate user account
@@ -110,20 +119,20 @@ router.put('/change-password', authenticate, [
 router.delete('/account', authenticate, async (req, res) => {
   try {
     const user = req.user;
-    
+
     // Deactivate instead of deleting
     user.isActive = false;
     await user.save();
 
     res.json({
       success: true,
-      message: 'Account deactivated successfully'
+      message: 'Account deactivated successfully',
     });
   } catch (error) {
     console.error('Deactivate account error:', error);
     res.status(500).json({
       success: false,
-      message: 'Server error while deactivating account'
+      message: 'Server error while deactivating account',
     });
   }
 });
@@ -154,15 +163,15 @@ router.get('/all', authenticate, authorize('admin'), async (req, res) => {
           page,
           limit,
           total,
-          pages: Math.ceil(total / limit)
-        }
-      }
+          pages: Math.ceil(total / limit),
+        },
+      },
     });
   } catch (error) {
     console.error('Get all users error:', error);
     res.status(500).json({
       success: false,
-      message: 'Server error while fetching users'
+      message: 'Server error while fetching users',
     });
   }
 });
@@ -170,45 +179,52 @@ router.get('/all', authenticate, authorize('admin'), async (req, res) => {
 // @route   PUT /api/user/:id/role
 // @desc    Update user role (Admin only)
 // @access  Private/Admin
-router.put('/:id/role', authenticate, authorize('admin'), [
-  body('role')
-    .isIn(['user', 'admin'])
-    .withMessage('Role must be either user or admin')
-], handleValidationErrors, async (req, res) => {
-  try {
-    const { role } = req.body;
-    const userId = req.params.id;
+router.put(
+  '/:id/role',
+  authenticate,
+  authorize('admin'),
+  [
+    body('role')
+      .isIn(['user', 'admin'])
+      .withMessage('Role must be either user or admin'),
+  ],
+  handleValidationErrors,
+  async (req, res) => {
+    try {
+      const { role } = req.body;
+      const userId = req.params.id;
 
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({
+      const user = await User.findById(userId);
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'User not found',
+        });
+      }
+
+      user.role = role;
+      await user.save();
+
+      res.json({
+        success: true,
+        message: 'User role updated successfully',
+        data: {
+          user: {
+            id: user._id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+          },
+        },
+      });
+    } catch (error) {
+      console.error('Update user role error:', error);
+      res.status(500).json({
         success: false,
-        message: 'User not found'
+        message: 'Server error while updating user role',
       });
     }
-
-    user.role = role;
-    await user.save();
-
-    res.json({
-      success: true,
-      message: 'User role updated successfully',
-      data: {
-        user: {
-          id: user._id,
-          name: user.name,
-          email: user.email,
-          role: user.role
-        }
-      }
-    });
-  } catch (error) {
-    console.error('Update user role error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Server error while updating user role'
-    });
   }
-});
+);
 
-module.exports = router; 
+module.exports = router;

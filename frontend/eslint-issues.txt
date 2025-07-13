@@ -1,0 +1,55 @@
+
+> frontend@0.1.0 lint
+> eslint . --ext .js,.jsx,.ts,.tsx
+
+(node:28591) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/krishjain/outbound%20ai%20MVP/frontend/eslint.config.js?mtime=1752378504635 is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/krishjain/outbound ai MVP/frontend/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+/Users/krishjain/outbound ai MVP/frontend/src/components/CallPage.tsx
+  115:52  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  188:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  189:7   warning  Unexpected console statement              no-console
+  213:7   warning  Unexpected console statement              no-console
+  239:7   warning  Unexpected console statement              no-console
+  266:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  267:7   warning  Unexpected console statement              no-console
+  300:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  301:7   warning  Unexpected console statement              no-console
+
+/Users/krishjain/outbound ai MVP/frontend/src/components/Dashboard.tsx
+  48:9  warning  Unexpected console statement  no-console
+  61:7  warning  Unexpected console statement  no-console
+
+/Users/krishjain/outbound ai MVP/frontend/src/components/auth/LoginForm.tsx
+  38:14  error  'error' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/krishjain/outbound ai MVP/frontend/src/components/auth/RegisterForm.tsx
+  79:14  error  'error' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/krishjain/outbound ai MVP/frontend/src/contexts/AuthContext.tsx
+   29:18  error    'error' is defined but never used                                                                                               @typescript-eslint/no-unused-vars
+   63:21  warning  Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+   92:21  warning  Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  105:7   warning  Unexpected console statement                                                                                                    no-console
+  134:21  warning  Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  160:14  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+/Users/krishjain/outbound ai MVP/frontend/src/services/api.ts
+   50:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   60:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   71:7   warning  Unexpected console statement              no-console
+   80:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   90:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  104:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  110:35  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  114:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  125:12  error    'error' is defined but never used         @typescript-eslint/no-unused-vars
+
+/Users/krishjain/outbound ai MVP/frontend/src/types/auth.ts
+  19:12  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  47:12  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+✖ 30 problems (4 errors, 26 warnings)
+

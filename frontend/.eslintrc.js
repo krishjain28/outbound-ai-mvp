@@ -21,13 +21,7 @@ module.exports = {
     ecmaVersion: 'latest',
     sourceType: 'module',
   },
-  plugins: [
-    'react',
-    '@typescript-eslint',
-    'react-hooks',
-    'jsx-a11y',
-    'import',
-  ],
+  plugins: ['react', '@typescript-eslint', 'react-hooks', 'jsx-a11y', 'import'],
   rules: {
     'react/react-in-jsx-scope': 'off',
     'react/prop-types': 'off',
@@ -51,7 +45,7 @@ module.exports = {
       },
     ],
     'no-console': 'warn',
-    'eqeqeq': 'error',
+    eqeqeq: 'error',
     'no-eval': 'error',
     'prefer-const': 'error',
   },
@@ -64,4 +58,4 @@ module.exports = {
     },
   },
   ignorePatterns: ['node_modules/', 'build/', 'coverage/'],
-}; 
+};

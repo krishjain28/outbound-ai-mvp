@@ -1,33 +1,35 @@
 const validator = require('validator');
 
 // Sanitize user input
-const sanitizeInput = (input) => {
+const sanitizeInput = input => {
   if (typeof input !== 'string') return input;
-  
+
   // Remove potential XSS attacks
   return validator.escape(input);
 };
 
 // Validate email format
-const isValidEmail = (email) => {
+const isValidEmail = email => {
   return validator.isEmail(email);
 };
 
 // Validate password strength
-const isStrongPassword = (password) => {
+const isStrongPassword = password => {
   return validator.isStrongPassword(password, {
     minLength: 6,
     minLowercase: 1,
     minUppercase: 1,
     minNumbers: 1,
-    minSymbols: 0
+    minSymbols: 0,
   });
 };
 
 // Validate user name
-const isValidName = (name) => {
-  return validator.isLength(name, { min: 2, max: 50 }) && 
-         validator.isAlpha(name.replace(/\s/g, ''));
+const isValidName = name => {
+  return (
+    validator.isLength(name, { min: 2, max: 50 }) &&
+    validator.isAlpha(name.replace(/\s/g, ''))
+  );
 };
 
 // Rate limiting helper
@@ -47,7 +49,7 @@ const generateSecureToken = () => {
 };
 
 // Hash sensitive data
-const hashData = (data) => {
+const hashData = data => {
   const crypto = require('crypto');
   return crypto.createHash('sha256').update(data).digest('hex');
 };
@@ -60,5 +62,5 @@ module.exports = {
   createRateLimitMessage,
   isAllowedOrigin,
   generateSecureToken,
-  hashData
-}; 
+  hashData,
+};

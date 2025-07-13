@@ -2,17 +2,16 @@ const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
 const cors = require('cors');
 const validator = require('validator');
-const mongoose = require('mongoose');
 
 // Rate limiting configurations
 const createRateLimit = (windowMs, max, message) => {
   return rateLimit({
     windowMs,
     max,
-    message: { 
-      success: false, 
+    message: {
+      success: false,
       message,
-      retryAfter: Math.ceil(windowMs / 1000)
+      retryAfter: Math.ceil(windowMs / 1000),
     },
     standardHeaders: true,
     legacyHeaders: false,
@@ -21,9 +20,9 @@ const createRateLimit = (windowMs, max, message) => {
       res.status(429).json({
         success: false,
         message,
-        retryAfter: Math.ceil(windowMs / 1000)
+        retryAfter: Math.ceil(windowMs / 1000),
       });
-    }
+    },
   });
 };
 
@@ -35,27 +34,27 @@ const rateLimits = {
     100, // 100 requests per window
     'Too many requests from this IP. Please try again later.'
   ),
-  
+
   // Authentication endpoints - stricter
   auth: createRateLimit(
     15 * 60 * 1000, // 15 minutes
     5, // 5 requests per window
     'Too many authentication attempts. Please try again later.'
   ),
-  
+
   // Call initiation - moderate
   calls: createRateLimit(
     60 * 1000, // 1 minute
     10, // 10 calls per minute
     'Too many call requests. Please wait before making another call.'
   ),
-  
+
   // Webhook endpoints - higher limit
   webhooks: createRateLimit(
     60 * 1000, // 1 minute
     1000, // 1000 requests per minute
     'Webhook rate limit exceeded.'
-  )
+  ),
 };
 
 // Security headers configuration
@@ -65,9 +64,15 @@ const securityHeaders = helmet({
       defaultSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
       scriptSrc: ["'self'"],
-      imgSrc: ["'self'", "data:", "https:"],
-      connectSrc: ["'self'", "https://api.openai.com", "https://api.elevenlabs.io", "https://api.deepgram.com", "https://api.telnyx.com"],
-      fontSrc: ["'self'", "data:"],
+      imgSrc: ["'self'", 'data:', 'https:'],
+      connectSrc: [
+        "'self'",
+        'https://api.openai.com',
+        'https://api.elevenlabs.io',
+        'https://api.deepgram.com',
+        'https://api.telnyx.com',
+      ],
+      fontSrc: ["'self'", 'data:'],
       objectSrc: ["'none'"],
       mediaSrc: ["'self'"],
       frameSrc: ["'none'"],
@@ -77,8 +82,8 @@ const securityHeaders = helmet({
   hsts: {
     maxAge: 31536000,
     includeSubDomains: true,
-    preload: true
-  }
+    preload: true,
+  },
 });
 
 // CORS configuration
@@ -89,12 +94,12 @@ const corsOptions = {
       'https://outbound-ai-frontend.vercel.app',
       'https://outbound-ai.vercel.app',
       'http://localhost:3000',
-      'http://localhost:3001'
+      'http://localhost:3001',
     ];
-    
+
     // Allow requests with no origin (mobile apps, etc.)
     if (!origin) return callback(null, true);
-    
+
     if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
@@ -105,14 +110,14 @@ const corsOptions = {
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  exposedHeaders: ['X-Total-Count', 'X-Rate-Limit-Remaining']
+  exposedHeaders: ['X-Total-Count', 'X-Rate-Limit-Remaining'],
 };
 
 // Input validation middleware
 const validateInput = (req, res, next) => {
   try {
     // Sanitize all string inputs
-    const sanitizeObject = (obj) => {
+    const sanitizeObject = obj => {
       for (const key in obj) {
         if (typeof obj[key] === 'string') {
           obj[key] = validator.escape(obj[key]);
@@ -121,21 +126,21 @@ const validateInput = (req, res, next) => {
         }
       }
     };
-    
+
     if (req.body) {
       sanitizeObject(req.body);
     }
-    
+
     if (req.query) {
       sanitizeObject(req.query);
     }
-    
+
     next();
   } catch (error) {
     console.error('Input validation error:', error);
     res.status(400).json({
       success: false,
-      message: 'Invalid input data'
+      message: 'Invalid input data',
     });
   }
 };
@@ -143,7 +148,7 @@ const validateInput = (req, res, next) => {
 // MongoDB injection protection
 const mongoSanitize = (req, res, next) => {
   try {
-    const sanitize = (obj) => {
+    const sanitize = obj => {
       for (const key in obj) {
         if (typeof obj[key] === 'object' && obj[key] !== null) {
           if (key.startsWith('$') || key.includes('.')) {
@@ -154,17 +159,17 @@ const mongoSanitize = (req, res, next) => {
         }
       }
     };
-    
+
     if (req.body) sanitize(req.body);
     if (req.query) sanitize(req.query);
     if (req.params) sanitize(req.params);
-    
+
     next();
   } catch (error) {
     console.error('MongoDB sanitization error:', error);
     res.status(400).json({
       success: false,
-      message: 'Invalid request format'
+      message: 'Invalid request format',
     });
   }
 };
@@ -172,7 +177,7 @@ const mongoSanitize = (req, res, next) => {
 // Request logging middleware
 const requestLogger = (req, res, next) => {
   const start = Date.now();
-  
+
   res.on('finish', () => {
     const duration = Date.now() - start;
     const logData = {
@@ -182,9 +187,9 @@ const requestLogger = (req, res, next) => {
       duration: `${duration}ms`,
       ip: req.ip,
       userAgent: req.get('User-Agent'),
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
-    
+
     // Log different levels based on status code
     if (res.statusCode >= 400) {
       console.error('Request Error:', logData);
@@ -194,28 +199,28 @@ const requestLogger = (req, res, next) => {
       console.log('Request Success:', logData);
     }
   });
-  
+
   next();
 };
 
 // Error handling middleware
-const errorHandler = (err, req, res, next) => {
+const errorHandler = (err, req, res) => {
   console.error('Error:', {
     message: err.message,
     stack: err.stack,
     url: req.originalUrl,
     method: req.method,
     ip: req.ip,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
-  
+
   // Don't expose error details in production
   const isDevelopment = process.env.NODE_ENV === 'development';
-  
+
   // Default error response
   let statusCode = 500;
   let message = 'Internal server error';
-  
+
   // Handle specific error types
   if (err.name === 'ValidationError') {
     statusCode = 400;
@@ -230,11 +235,11 @@ const errorHandler = (err, req, res, next) => {
     statusCode = 409;
     message = 'Duplicate entry';
   }
-  
+
   res.status(statusCode).json({
     success: false,
     message,
-    ...(isDevelopment && { error: err.message, stack: err.stack })
+    ...(isDevelopment && { error: err.message, stack: err.stack }),
   });
 };
 
@@ -247,7 +252,7 @@ const healthCheck = (req, res, next) => {
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
       memory: process.memoryUsage(),
-      environment: process.env.NODE_ENV
+      environment: process.env.NODE_ENV,
     });
   }
   next();
@@ -256,22 +261,22 @@ const healthCheck = (req, res, next) => {
 // API key validation for external services
 const validateApiKey = (req, res, next) => {
   const apiKey = req.headers['x-api-key'];
-  
+
   if (!apiKey) {
     return res.status(401).json({
       success: false,
-      message: 'API key required'
+      message: 'API key required',
     });
   }
-  
+
   // Validate API key format (basic validation)
   if (apiKey.length < 20 || !apiKey.startsWith('sk-')) {
     return res.status(401).json({
       success: false,
-      message: 'Invalid API key format'
+      message: 'Invalid API key format',
     });
   }
-  
+
   next();
 };
 
@@ -283,7 +288,7 @@ const productionSecurity = [
   validateInput,
   mongoSanitize,
   requestLogger,
-  healthCheck
+  healthCheck,
 ];
 
 module.exports = {
@@ -296,5 +301,5 @@ module.exports = {
   errorHandler,
   healthCheck,
   validateApiKey,
-  productionSecurity
-}; 
+  productionSecurity,
+};

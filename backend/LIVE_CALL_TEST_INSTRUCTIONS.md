@@ -64,6 +64,7 @@
 ### Step 5: Expected Performance
 
 **Optimized Timings:**
+
 - Call Answer Delay: ~500ms (was 1000ms)
 - Speech Recognition Start: ~200ms (was 1000ms)
 - Voice Response Time: 1-2s (was 3-5s)
@@ -107,6 +108,7 @@
 ## 🎯 Success Criteria
 
 The optimized system is working if you see:
+
 - ✅ Fast AI responses (1-2 seconds)
 - ✅ Natural ElevenLabs voice
 - ✅ Accurate speech recognition
@@ -121,4 +123,4 @@ The optimized system is working if you see:
 4. Watch the console for optimization logs
 5. Report any issues you notice
 
-**The system should now be significantly faster and more responsive than before!** 
+**The system should now be significantly faster and more responsive than before!**

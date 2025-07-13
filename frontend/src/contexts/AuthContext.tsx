@@ -1,7 +1,18 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  ReactNode,
+} from 'react';
 import { toast } from 'react-toastify';
 import { authAPI } from '../services/api';
-import { User, AuthContextType, LoginCredentials, RegisterCredentials } from '../types/auth';
+import {
+  User,
+  AuthContextType,
+  LoginCredentials,
+  RegisterCredentials,
+} from '../types/auth';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -11,7 +22,9 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
+  const [token, setToken] = useState<string | null>(
+    localStorage.getItem('token')
+  );
   const [loading, setLoading] = useState(true);
 
   // Initialize auth state
@@ -26,7 +39,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           const response = await authAPI.getProfile();
           setUser(response.data.user);
           setToken(storedToken);
-        } catch (error) {
+        } catch {
           // Token is invalid, clear storage
           localStorage.removeItem('token');
           localStorage.removeItem('user');
@@ -44,18 +57,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setLoading(true);
       const response = await authAPI.login(credentials);
-      
+
       if (response.success && response.data) {
         const { user, token } = response.data;
-        
+
         // Store in localStorage
         localStorage.setItem('token', token);
         localStorage.setItem('user', JSON.stringify(user));
-        
+
         // Update state
         setUser(user);
         setToken(token);
-        
+
         toast.success('Login successful!');
       } else {
         throw new Error(response.message || 'Login failed');
@@ -73,18 +86,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setLoading(true);
       const response = await authAPI.register(credentials);
-      
+
       if (response.success && response.data) {
         const { user, token } = response.data;
-        
+
         // Store in localStorage
         localStorage.setItem('token', token);
         localStorage.setItem('user', JSON.stringify(user));
-        
+
         // Update state
         setUser(user);
         setToken(token);
-        
+
         toast.success('Registration successful!');
       } else {
         throw new Error(response.message || 'Registration failed');
@@ -117,16 +130,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setLoading(true);
       const response = await authAPI.updateProfile(data);
-      
+
       if (response.success && response.data) {
         const updatedUser = response.data.user;
-        
+
         // Update localStorage
         localStorage.setItem('user', JSON.stringify(updatedUser));
-        
+
         // Update state
         setUser(updatedUser);
-        
+
         toast.success('Profile updated successfully!');
       } else {
         throw new Error('Failed to update profile');
@@ -150,11 +163,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     updateProfile,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = (): AuthContextType => {
@@ -163,4 +172,4 @@ export const useAuth = (): AuthContextType => {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-}; 
+};

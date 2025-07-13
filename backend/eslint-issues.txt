@@ -1,0 +1,356 @@
+
+> outbound-ai-backend@1.0.0 lint
+> eslint . --ext .js,.jsx,.ts,.tsx
+
+
+/Users/krishjain/outbound ai MVP/backend/middleware/monitoring.js
+   44:11  error    'cpus' is assigned a value but never used        no-unused-vars
+   68:16  error    'type' is never reassigned. Use 'const' instead  prefer-const
+  183:5   warning  Unexpected console statement                     no-console
+  209:7   warning  Unexpected console statement                     no-console
+  260:7   warning  Unexpected console statement                     no-console
+  349:11  warning  Unexpected console statement                     no-console
+
+/Users/krishjain/outbound ai MVP/backend/middleware/security.js
+    5:7   error    'mongoose' is assigned a value but never used  no-unused-vars
+   20:7   warning  Unexpected console statement                   no-console
+  101:7   warning  Unexpected console statement                   no-console
+  135:5   warning  Unexpected console statement                   no-console
+  164:5   warning  Unexpected console statement                   no-console
+  190:7   warning  Unexpected console statement                   no-console
+  192:7   warning  Unexpected console statement                   no-console
+  194:7   warning  Unexpected console statement                   no-console
+  202:38  error    'next' is defined but never used               no-unused-vars
+  203:3   warning  Unexpected console statement                   no-console
+
+/Users/krishjain/outbound ai MVP/backend/models/Call.js
+  31:25  error  Unnecessary escape character: \(  no-useless-escape
+  31:27  error  Unnecessary escape character: \)  no-useless-escape
+
+/Users/krishjain/outbound ai MVP/backend/routes/auth.js
+  105:5  warning  Unexpected console statement  no-console
+  164:5  warning  Unexpected console statement  no-console
+  208:5  warning  Unexpected console statement  no-console
+  237:5  warning  Unexpected console statement  no-console
+  296:5  warning  Unexpected console statement  no-console
+
+/Users/krishjain/outbound ai MVP/backend/routes/calls.js
+    29:7   error    'TELNYX_PUBLIC_KEY' is assigned a value but never used    no-unused-vars
+    45:5   warning  Unexpected console statement                              no-console
+    46:5   warning  Unexpected console statement                              no-console
+    47:5   warning  Unexpected console statement                              no-console
+    48:5   warning  Unexpected console statement                              no-console
+    49:5   warning  Unexpected console statement                              no-console
+    50:5   warning  Unexpected console statement                              no-console
+    51:5   warning  Unexpected console statement                              no-console
+    56:5   warning  Unexpected console statement                              no-console
+    57:5   warning  Unexpected console statement                              no-console
+    58:48  warning  Unexpected console statement                              no-console
+    59:50  warning  Unexpected console statement                              no-console
+   116:5   warning  Unexpected console statement                              no-console
+   131:26  error    Unnecessary escape character: \(                          no-useless-escape
+   131:28  error    Unnecessary escape character: \)                          no-useless-escape
+   146:56  error    Unnecessary escape character: \(                          no-useless-escape
+   146:58  error    Unnecessary escape character: \)                          no-useless-escape
+   174:7   warning  Unexpected console statement                              no-console
+   183:5   warning  Unexpected console statement                              no-console
+   207:7   warning  Unexpected console statement                              no-console
+   231:7   warning  Unexpected console statement                              no-console
+   261:5   warning  Unexpected console statement                              no-console
+   275:5   warning  Unexpected console statement                              no-console
+   276:5   warning  Unexpected console statement                              no-console
+   277:5   warning  Unexpected console statement                              no-console
+   278:5   warning  Unexpected console statement                              no-console
+   283:7   warning  Unexpected console statement                              no-console
+   290:5   warning  Unexpected console statement                              no-console
+   297:9   warning  Unexpected console statement                              no-console
+   304:7   warning  Unexpected console statement                              no-console
+   308:5   warning  Unexpected console statement                              no-console
+   313:9   warning  Unexpected console statement                              no-console
+   319:9   warning  Unexpected console statement                              no-console
+   336:15  warning  Unexpected console statement                              no-console
+   338:15  warning  Unexpected console statement                              no-console
+   344:13  warning  Unexpected console statement                              no-console
+   353:9   warning  Unexpected console statement                              no-console
+   354:9   error    Unexpected lexical declaration in case block              no-case-declarations
+   355:9   error    Unexpected lexical declaration in case block              no-case-declarations
+   362:11  warning  Unexpected console statement                              no-console
+   371:9   warning  Unexpected console statement                              no-console
+   375:9   warning  Unexpected console statement                              no-console
+   382:15  warning  Unexpected console statement                              no-console
+   387:13  warning  Unexpected console statement                              no-console
+   394:17  warning  Unexpected console statement                              no-console
+   421:17  warning  Unexpected console statement                              no-console
+   428:15  warning  Unexpected console statement                              no-console
+   433:13  warning  Unexpected console statement                              no-console
+   441:9   warning  Unexpected console statement                              no-console
+   460:9   warning  Unexpected console statement                              no-console
+   466:5   warning  Unexpected console statement                              no-console
+   502:5   warning  Unexpected console statement                              no-console
+   534:5   warning  Unexpected console statement                              no-console
+   580:5   warning  Unexpected console statement                              no-console
+   608:5   warning  Unexpected console statement                              no-console
+   622:5   warning  Unexpected console statement                              no-console
+   635:7   warning  Unexpected console statement                              no-console
+   646:11  warning  Unexpected console statement                              no-console
+   650:13  warning  Unexpected console statement                              no-console
+   655:15  warning  Unexpected console statement                              no-console
+   657:15  warning  Unexpected console statement                              no-console
+   685:9   warning  Unexpected console statement                              no-console
+   689:9   warning  Unexpected console statement                              no-console
+   693:9   warning  Unexpected console statement                              no-console
+   695:9   error    Unexpected lexical declaration in case block              no-case-declarations
+   700:9   warning  Unexpected console statement                              no-console
+   706:5   warning  Unexpected console statement                              no-console
+   733:5   warning  Unexpected console statement                              no-console
+   741:11  error    'conversationHistory' is assigned a value but never used  no-unused-vars
+   776:5   warning  Unexpected console statement                              no-console
+   796:7   warning  Unexpected console statement                              no-console
+   803:5   warning  Unexpected console statement                              no-console
+   817:5   warning  Unexpected console statement                              no-console
+   821:5   warning  Unexpected console statement                              no-console
+   874:48  error    Unnecessary escape character: \'                          no-useless-escape
+   881:48  error    Unnecessary escape character: \'                          no-useless-escape
+   898:48  error    Unnecessary escape character: \'                          no-useless-escape
+   900:45  error    Unnecessary escape character: \'                          no-useless-escape
+   914:48  error    Unnecessary escape character: \'                          no-useless-escape
+   915:48  error    Unnecessary escape character: \'                          no-useless-escape
+   935:7   warning  Unexpected console statement                              no-console
+   939:5   warning  Unexpected console statement                              no-console
+   955:9   warning  Unexpected console statement                              no-console
+   964:9   warning  Unexpected console statement                              no-console
+   969:5   warning  Unexpected console statement                              no-console
+  1000:5   warning  Unexpected console statement                              no-console
+  1015:7   warning  Unexpected console statement                              no-console
+  1019:5   warning  Unexpected console statement                              no-console
+  1038:5   warning  Unexpected console statement                              no-console
+  1045:11  warning  Unexpected console statement                              no-console
+  1049:9   warning  Unexpected console statement                              no-console
+  1054:5   warning  Unexpected console statement                              no-console
+  1058:7   warning  Unexpected console statement                              no-console
+  1072:11  warning  Unexpected console statement                              no-console
+  1077:7   warning  Unexpected console statement                              no-console
+  1193:5   warning  Unexpected console statement                              no-console
+  1207:5   warning  Unexpected console statement                              no-console
+  1212:7   warning  Unexpected console statement                              no-console
+  1227:7   warning  Unexpected console statement                              no-console
+  1246:7   warning  Unexpected console statement                              no-console
+  1251:11  warning  Unexpected console statement                              no-console
+  1258:5   warning  Unexpected console statement                              no-console
+
+/Users/krishjain/outbound ai MVP/backend/routes/user.js
+   49:5  warning  Unexpected console statement  no-console
+   99:5  warning  Unexpected console statement  no-console
+  123:5  warning  Unexpected console statement  no-console
+  162:5  warning  Unexpected console statement  no-console
+  206:5  warning  Unexpected console statement  no-console
+
+/Users/krishjain/outbound ai MVP/backend/server.js
+   43:5  warning  Unexpected console statement                      no-console
+   55:5  warning  Unexpected console statement                      no-console
+   57:5  warning  Unexpected console statement                      no-console
+   58:5  warning  Unexpected console statement                      no-console
+   59:5  warning  Unexpected console statement                      no-console
+   60:5  warning  Unexpected console statement                      no-console
+   61:5  warning  Unexpected console statement                      no-console
+   62:5  warning  Unexpected console statement                      no-console
+   65:5  warning  Unexpected console statement                      no-console
+  128:5  warning  Unexpected console statement                      no-console
+  129:5  warning  Unexpected console statement                      no-console
+  141:5  warning  Unexpected console statement                      no-console
+  144:7  warning  Unexpected console statement                      no-console
+  145:7  error    Don't use process.exit(); throw an error instead  no-process-exit
+  150:5  warning  Unexpected console statement                      no-console
+  153:7  warning  Unexpected console statement                      no-console
+  154:7  error    Don't use process.exit(); throw an error instead  no-process-exit
+  162:1  warning  Unexpected console statement                      no-console
+  163:1  warning  Unexpected console statement                      no-console
+  164:1  warning  Unexpected console statement                      no-console
+
+/Users/krishjain/outbound ai MVP/backend/services/conversationService.js
+   24:5   error    Unreachable code                        no-unreachable
+   93:5   warning  Unexpected console statement            no-console
+  162:7   warning  Unexpected console statement            no-console
+  188:7   warning  Unexpected console statement            no-console
+  199:7   warning  Unexpected console statement            no-console
+  237:51  error    'aiResponse' is defined but never used  no-unused-vars
+  353:5   warning  Unexpected console statement            no-console
+
+/Users/krishjain/outbound ai MVP/backend/services/integratedWorkerService.js
+    3:7  error    'conversationService' is assigned a value but never used  no-unused-vars
+   13:5  warning  Unexpected console statement                              no-console
+   27:5  warning  Unexpected console statement                              no-console
+   47:7  warning  Unexpected console statement                              no-console
+   69:7  warning  Unexpected console statement                              no-console
+   75:7  warning  Unexpected console statement                              no-console
+   84:7  warning  Unexpected console statement                              no-console
+   90:7  warning  Unexpected console statement                              no-console
+   99:7  warning  Unexpected console statement                              no-console
+  104:5  warning  Unexpected console statement                              no-console
+  116:5  warning  Unexpected console statement                              no-console
+
+/Users/krishjain/outbound ai MVP/backend/services/speechService.js
+    3:7   error    'WebSocket' is assigned a value but never used  no-unused-vars
+   13:9   warning  Unexpected console statement                    no-console
+   15:9   warning  Unexpected console statement                    no-console
+   18:7   warning  Unexpected console statement                    no-console
+   28:9   warning  Unexpected console statement                    no-console
+   30:9   warning  Unexpected console statement                    no-console
+   33:7   warning  Unexpected console statement                    no-console
+   63:9   warning  Unexpected console statement                    no-console
+   67:7   warning  Unexpected console statement                    no-console
+   87:9   warning  Unexpected console statement                    no-console
+   93:11  warning  Unexpected console statement                    no-console
+   99:9   warning  Unexpected console statement                    no-console
+  104:9   warning  Unexpected console statement                    no-console
+  124:7   warning  Unexpected console statement                    no-console
+  133:53  error    'deepgramLive' is defined but never used        no-unused-vars
+  150:7   warning  Unexpected console statement                    no-console
+  153:7   warning  Unexpected console statement                    no-console
+  167:9   warning  Unexpected console statement                    no-console
+  171:7   warning  Unexpected console statement                    no-console
+  205:7   warning  Unexpected console statement                    no-console
+  240:7   warning  Unexpected console statement                    no-console
+  246:9   warning  Unexpected console statement                    no-console
+  267:7   warning  Unexpected console statement                    no-console
+  271:7   warning  Unexpected console statement                    no-console
+  272:7   warning  Unexpected console statement                    no-console
+  301:7   warning  Unexpected console statement                    no-console
+  304:7   warning  Unexpected console statement                    no-console
+  335:11  warning  Unexpected console statement                    no-console
+  341:9   warning  Unexpected console statement                    no-console
+  346:7   warning  Unexpected console statement                    no-console
+  355:5   warning  Unexpected console statement                    no-console
+  374:9   warning  Unexpected console statement                    no-console
+
+/Users/krishjain/outbound ai MVP/backend/test-call.js
+   6:7   error    'TEST_PHONE_NUMBER' is assigned a value but never used  no-unused-vars
+   9:3   warning  Unexpected console statement                            no-console
+  10:3   warning  Unexpected console statement                            no-console
+  13:3   warning  Unexpected console statement                            no-console
+  16:5   warning  Unexpected console statement                            no-console
+  18:5   warning  Unexpected console statement                            no-console
+  23:3   warning  Unexpected console statement                            no-console
+  30:3   warning  Unexpected console statement                            no-console
+  33:5   warning  Unexpected console statement                            no-console
+  37:3   warning  Unexpected console statement                            no-console
+  40:3   warning  Unexpected console statement                            no-console
+  48:5   warning  Unexpected console statement                            no-console
+  49:5   warning  Unexpected console statement                            no-console
+  51:5   warning  Unexpected console statement                            no-console
+  55:3   warning  Unexpected console statement                            no-console
+  57:11  error    'openaiResponse' is assigned a value but never used     no-unused-vars
+  67:5   warning  Unexpected console statement                            no-console
+  69:5   warning  Unexpected console statement                            no-console
+  72:3   warning  Unexpected console statement                            no-console
+  73:3   warning  Unexpected console statement                            no-console
+  74:3   warning  Unexpected console statement                            no-console
+  75:3   warning  Unexpected console statement                            no-console
+  76:3   warning  Unexpected console statement                            no-console
+  77:3   warning  Unexpected console statement                            no-console
+  78:3   warning  Unexpected console statement                            no-console
+  82:31  warning  Unexpected console statement                            no-console
+
+/Users/krishjain/outbound ai MVP/backend/test-enhanced-system.js
+   19:3   warning  Unexpected console statement                                no-console
+   75:9   error    'requiredMissing' is never reassigned. Use 'const' instead  prefer-const
+   93:9   error    'enhancedMissing' is never reassigned. Use 'const' instead  prefer-const
+  175:15  error    'deepgram' is assigned a value but never used               no-unused-vars
+  178:15  error    'response' is assigned a value but never used               no-unused-vars
+  229:15  error    'speechService' is assigned a value but never used          no-unused-vars
+  357:11  error    'results' is defined but never used                         no-unused-vars
+  358:7   error    Don't use process.exit(); throw an error instead            no-process-exit
+  362:7   error    Don't use process.exit(); throw an error instead            no-process-exit
+
+/Users/krishjain/outbound ai MVP/backend/test-live-call.js
+   15:3   warning  Unexpected console statement                      no-console
+   78:7   warning  Unexpected console statement                      no-console
+   81:7   warning  Unexpected console statement                      no-console
+  101:5   warning  Unexpected console statement                      no-console
+  170:11  error    Don't use process.exit(); throw an error instead  no-process-exit
+  183:7   error    Don't use process.exit(); throw an error instead  no-process-exit
+  200:5   error    Don't use process.exit(); throw an error instead  no-process-exit
+  207:3   error    Don't use process.exit(); throw an error instead  no-process-exit
+  217:26  warning  Unexpected console statement                      no-console
+
+/Users/krishjain/outbound ai MVP/backend/test-optimized-call-system.js
+   17:3   warning  Unexpected console statement                                no-console
+   56:9   error    'missingRequired' is never reassigned. Use 'const' instead  prefer-const
+   57:9   error    'missingOptional' is never reassigned. Use 'const' instead  prefer-const
+   89:13  error    'telnyxResponse' is assigned a value but never used         no-unused-vars
+  107:13  error    'openaiResponse' is assigned a value but never used         no-unused-vars
+  132:15  error    'response' is assigned a value but never used               no-unused-vars
+  274:33  warning  Unexpected console statement                                no-console
+
+/Users/krishjain/outbound ai MVP/backend/workers/callWorker.js
+   17:5   warning  Unexpected console statement                      no-console
+   29:5   warning  Unexpected console statement                      no-console
+   38:7   warning  Unexpected console statement                      no-console
+   40:7   warning  Unexpected console statement                      no-console
+   41:7   error    Don't use process.exit(); throw an error instead  no-process-exit
+   47:5   warning  Unexpected console statement                      no-console
+   54:7   warning  Unexpected console statement                      no-console
+   55:7   error    Don't use process.exit(); throw an error instead  no-process-exit
+   58:5   warning  Unexpected console statement                      no-console
+   85:9   warning  Unexpected console statement                      no-console
+   95:7   warning  Unexpected console statement                      no-console
+  112:11  warning  Unexpected console statement                      no-console
+  115:7   warning  Unexpected console statement                      no-console
+  130:7   warning  Unexpected console statement                      no-console
+  152:9   warning  Unexpected console statement                      no-console
+  157:9   warning  Unexpected console statement                      no-console
+  163:9   warning  Unexpected console statement                      no-console
+  166:7   warning  Unexpected console statement                      no-console
+  183:9   warning  Unexpected console statement                      no-console
+  192:7   warning  Unexpected console statement                      no-console
+  201:7   warning  Unexpected console statement                      no-console
+  251:7   warning  Unexpected console statement                      no-console
+  253:7   warning  Unexpected console statement                      no-console
+  262:5   warning  Unexpected console statement                      no-console
+  267:7   warning  Unexpected console statement                      no-console
+  273:5   warning  Unexpected console statement                      no-console
+  279:3   warning  Unexpected console statement                      no-console
+  283:3   error    Don't use process.exit(); throw an error instead  no-process-exit
+  287:3   warning  Unexpected console statement                      no-console
+  291:3   error    Don't use process.exit(); throw an error instead  no-process-exit
+  300:5   warning  Unexpected console statement                      no-console
+  301:5   error    Don't use process.exit(); throw an error instead  no-process-exit
+
+/Users/krishjain/outbound ai MVP/backend/workers/conversationWorker.js
+    3:7  error    'conversationService' is assigned a value but never used  no-unused-vars
+   21:5  warning  Unexpected console statement                              no-console
+   33:5  warning  Unexpected console statement                              no-console
+   42:7  warning  Unexpected console statement                              no-console
+   44:7  warning  Unexpected console statement                              no-console
+   45:7  error    Don't use process.exit(); throw an error instead          no-process-exit
+   50:5  warning  Unexpected console statement                              no-console
+   57:7  warning  Unexpected console statement                              no-console
+   58:7  error    Don't use process.exit(); throw an error instead          no-process-exit
+   61:5  warning  Unexpected console statement                              no-console
+   87:9  warning  Unexpected console statement                              no-console
+   97:7  warning  Unexpected console statement                              no-console
+  114:7  warning  Unexpected console statement                              no-console
+  116:7  warning  Unexpected console statement                              no-console
+  161:7  warning  Unexpected console statement                              no-console
+  163:7  warning  Unexpected console statement                              no-console
+  212:7  warning  Unexpected console statement                              no-console
+  214:7  warning  Unexpected console statement                              no-console
+  259:7  warning  Unexpected console statement                              no-console
+  261:7  warning  Unexpected console statement                              no-console
+  304:7  warning  Unexpected console statement                              no-console
+  306:7  warning  Unexpected console statement                              no-console
+  351:7  warning  Unexpected console statement                              no-console
+  353:7  warning  Unexpected console statement                              no-console
+  362:5  warning  Unexpected console statement                              no-console
+  367:7  warning  Unexpected console statement                              no-console
+  373:5  warning  Unexpected console statement                              no-console
+  379:3  warning  Unexpected console statement                              no-console
+  383:3  error    Don't use process.exit(); throw an error instead          no-process-exit
+  387:3  warning  Unexpected console statement                              no-console
+  391:3  error    Don't use process.exit(); throw an error instead          no-process-exit
+  400:5  warning  Unexpected console statement                              no-console
+  401:5  error    Don't use process.exit(); throw an error instead          no-process-exit
+
+✖ 316 problems (58 errors, 258 warnings)
+  5 errors and 0 warnings potentially fixable with the `--fix` option.
+

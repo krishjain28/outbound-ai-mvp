@@ -10,26 +10,26 @@ class ConversationWorker {
     this.processingQueue = [];
     this.maxConcurrentProcessing = 3;
     this.currentProcessing = 0;
-    
+
     // Initialize OpenAI
     this.openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY
+      apiKey: process.env.OPENAI_API_KEY,
     });
   }
 
   async start() {
     console.log('🤖 Starting Conversation Worker...');
-    
+
     // Connect to MongoDB
     await this.connectDB();
-    
+
     // Initialize services
     await this.initializeServices();
-    
+
     // Start processing queue
     this.isRunning = true;
     this.processQueue();
-    
+
     console.log('✅ Conversation Worker started successfully');
   }
 
@@ -48,16 +48,18 @@ class ConversationWorker {
 
   async initializeServices() {
     console.log('🔧 Initializing conversation services...');
-    
+
     // Validate required environment variables
     const required = ['OPENAI_API_KEY'];
     const missing = required.filter(key => !process.env[key]);
-    
+
     if (missing.length > 0) {
-      console.error(`❌ Missing required environment variables: ${missing.join(', ')}`);
+      console.error(
+        `❌ Missing required environment variables: ${missing.join(', ')}`
+      );
       process.exit(1);
     }
-    
+
     console.log('✅ Conversation services initialized');
   }
 
@@ -71,8 +73,11 @@ class ConversationWorker {
             { qualificationScore: { $exists: false } },
             { conversationAnalysis: { $exists: false } },
             { lastAnalyzed: { $lt: new Date(Date.now() - 5 * 60 * 1000) } }, // 5 minutes ago
-            { 'conversation.0': { $exists: true }, qualificationScore: { $exists: false } }
-          ]
+            {
+              'conversation.0': { $exists: true },
+              qualificationScore: { $exists: false },
+            },
+          ],
         }).limit(this.maxConcurrentProcessing - this.currentProcessing);
 
         for (const call of callsToProcess) {
@@ -92,10 +97,10 @@ class ConversationWorker {
 
   async processConversation(call) {
     this.currentProcessing++;
-    
+
     try {
       console.log(`🤖 Processing conversation for call ${call._id}`);
-      
+
       // Update last analyzed timestamp
       call.lastAnalyzed = new Date();
       await call.save();
@@ -113,7 +118,10 @@ class ConversationWorker {
 
       console.log(`✅ Conversation analysis completed for call ${call._id}`);
     } catch (error) {
-      console.error(`❌ Error processing conversation for call ${call._id}:`, error);
+      console.error(
+        `❌ Error processing conversation for call ${call._id}:`,
+        error
+      );
     } finally {
       this.currentProcessing--;
     }
@@ -146,21 +154,28 @@ class ConversationWorker {
       const response = await this.openai.chat.completions.create({
         model: 'gpt-4',
         messages: [
-          { role: 'system', content: 'You are a sales conversation analyst. Provide detailed analysis in valid JSON format.' },
-          { role: 'user', content: analysisPrompt }
+          {
+            role: 'system',
+            content:
+              'You are a sales conversation analyst. Provide detailed analysis in valid JSON format.',
+          },
+          { role: 'user', content: analysisPrompt },
         ],
         temperature: 0.3,
-        max_tokens: 1000
+        max_tokens: 1000,
       });
 
       const analysis = JSON.parse(response.choices[0].message.content);
-      
+
       call.conversationAnalysis = analysis;
       await call.save();
-      
+
       console.log(`📊 Conversation analysis completed for call ${call._id}`);
     } catch (error) {
-      console.error(`❌ Error analyzing conversation for call ${call._id}:`, error);
+      console.error(
+        `❌ Error analyzing conversation for call ${call._id}:`,
+        error
+      );
     }
   }
 
@@ -196,22 +211,31 @@ class ConversationWorker {
       const response = await this.openai.chat.completions.create({
         model: 'gpt-4',
         messages: [
-          { role: 'system', content: 'You are a lead qualification expert. Provide accurate BANT scoring in JSON format.' },
-          { role: 'user', content: scoringPrompt }
+          {
+            role: 'system',
+            content:
+              'You are a lead qualification expert. Provide accurate BANT scoring in JSON format.',
+          },
+          { role: 'user', content: scoringPrompt },
         ],
         temperature: 0.2,
-        max_tokens: 500
+        max_tokens: 500,
       });
 
       const scoring = JSON.parse(response.choices[0].message.content);
-      
+
       call.qualificationScore = scoring.total_score;
       call.qualificationDetails = scoring;
       await call.save();
-      
-      console.log(`🎯 Qualification score generated for call ${call._id}: ${scoring.total_score}/100`);
+
+      console.log(
+        `🎯 Qualification score generated for call ${call._id}: ${scoring.total_score}/100`
+      );
     } catch (error) {
-      console.error(`❌ Error generating qualification score for call ${call._id}:`, error);
+      console.error(
+        `❌ Error generating qualification score for call ${call._id}:`,
+        error
+      );
     }
   }
 
@@ -244,21 +268,28 @@ class ConversationWorker {
       const response = await this.openai.chat.completions.create({
         model: 'gpt-4',
         messages: [
-          { role: 'system', content: 'You are a lead information extraction expert. Extract only explicitly mentioned information.' },
-          { role: 'user', content: extractionPrompt }
+          {
+            role: 'system',
+            content:
+              'You are a lead information extraction expert. Extract only explicitly mentioned information.',
+          },
+          { role: 'user', content: extractionPrompt },
         ],
         temperature: 0.1,
-        max_tokens: 600
+        max_tokens: 600,
       });
 
       const leadInfo = JSON.parse(response.choices[0].message.content);
-      
+
       call.leadInformation = leadInfo;
       await call.save();
-      
+
       console.log(`📋 Lead information extracted for call ${call._id}`);
     } catch (error) {
-      console.error(`❌ Error extracting lead information for call ${call._id}:`, error);
+      console.error(
+        `❌ Error extracting lead information for call ${call._id}:`,
+        error
+      );
     }
   }
 
@@ -288,22 +319,29 @@ class ConversationWorker {
       const response = await this.openai.chat.completions.create({
         model: 'gpt-4',
         messages: [
-          { role: 'system', content: 'You are a sales call summarization expert. Provide clear, actionable summaries.' },
-          { role: 'user', content: summaryPrompt }
+          {
+            role: 'system',
+            content:
+              'You are a sales call summarization expert. Provide clear, actionable summaries.',
+          },
+          { role: 'user', content: summaryPrompt },
         ],
         temperature: 0.3,
-        max_tokens: 800
+        max_tokens: 800,
       });
 
       const summary = JSON.parse(response.choices[0].message.content);
-      
+
       call.callSummary = summary;
       call.meetingBooked = summary.meeting_scheduled || false;
       await call.save();
-      
+
       console.log(`📝 Call summary generated for call ${call._id}`);
     } catch (error) {
-      console.error(`❌ Error generating call summary for call ${call._id}:`, error);
+      console.error(
+        `❌ Error generating call summary for call ${call._id}:`,
+        error
+      );
     }
   }
 
@@ -314,7 +352,7 @@ class ConversationWorker {
         outcome: call.outcome,
         qualificationScore: call.qualificationScore,
         conversationAnalysis: call.conversationAnalysis,
-        leadInformation: call.leadInformation
+        leadInformation: call.leadInformation,
       };
 
       const recommendationPrompt = `
@@ -336,21 +374,30 @@ class ConversationWorker {
       const response = await this.openai.chat.completions.create({
         model: 'gpt-4',
         messages: [
-          { role: 'system', content: 'You are a sales follow-up strategist. Provide actionable recommendations.' },
-          { role: 'user', content: recommendationPrompt }
+          {
+            role: 'system',
+            content:
+              'You are a sales follow-up strategist. Provide actionable recommendations.',
+          },
+          { role: 'user', content: recommendationPrompt },
         ],
         temperature: 0.4,
-        max_tokens: 600
+        max_tokens: 600,
       });
 
       const recommendations = JSON.parse(response.choices[0].message.content);
-      
+
       call.followUpRecommendations = recommendations;
       await call.save();
-      
-      console.log(`🎯 Follow-up recommendations generated for call ${call._id}`);
+
+      console.log(
+        `🎯 Follow-up recommendations generated for call ${call._id}`
+      );
     } catch (error) {
-      console.error(`❌ Error generating follow-up recommendations for call ${call._id}:`, error);
+      console.error(
+        `❌ Error generating follow-up recommendations for call ${call._id}:`,
+        error
+      );
     }
   }
 
@@ -361,13 +408,15 @@ class ConversationWorker {
   async stop() {
     console.log('🛑 Stopping Conversation Worker...');
     this.isRunning = false;
-    
+
     // Wait for current processing to finish
     while (this.currentProcessing > 0) {
-      console.log(`⏳ Waiting for ${this.currentProcessing} conversations to finish processing...`);
+      console.log(
+        `⏳ Waiting for ${this.currentProcessing} conversations to finish processing...`
+      );
       await this.sleep(1000);
     }
-    
+
     // Close MongoDB connection
     await mongoose.connection.close();
     console.log('✅ Conversation Worker stopped');
@@ -402,4 +451,4 @@ const main = async () => {
   }
 };
 
-main(); 
+main();

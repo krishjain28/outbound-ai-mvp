@@ -1,7 +1,13 @@
 import axios from 'axios';
-import { AuthResponse, LoginCredentials, RegisterCredentials, User } from '../types/auth';
+import {
+  AuthResponse,
+  LoginCredentials,
+  RegisterCredentials,
+  User,
+} from '../types/auth';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
+const API_BASE_URL =
+  process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
 
 // Create axios instance
 const api = axios.create({
@@ -14,22 +20,22 @@ const api = axios.create({
 
 // Request interceptor to add auth token
 api.interceptors.request.use(
-  (config) => {
+  config => {
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
-  (error) => {
+  error => {
     return Promise.reject(error);
   }
 );
 
 // Response interceptor to handle errors
 api.interceptors.response.use(
-  (response) => response,
-  (error) => {
+  response => response,
+  error => {
     if (error.response?.status === 401) {
       // Token expired or invalid
       localStorage.removeItem('token');
@@ -83,7 +89,9 @@ export const authAPI = {
   },
 
   // Update user profile
-  updateProfile: async (data: Partial<User>): Promise<{ success: boolean; data: { user: User } }> => {
+  updateProfile: async (
+    data: Partial<User>
+  ): Promise<{ success: boolean; data: { user: User } }> => {
     try {
       const response = await api.put('/auth/profile', data);
       return response.data;
@@ -112,7 +120,9 @@ export const authAPI = {
       const response = await api.get('/user/dashboard');
       return response.data;
     } catch (error: any) {
-      throw error.response?.data || { message: 'Failed to fetch dashboard data' };
+      throw (
+        error.response?.data || { message: 'Failed to fetch dashboard data' }
+      );
     }
   },
 };
@@ -122,9 +132,9 @@ export const healthCheck = async (): Promise<boolean> => {
   try {
     const response = await api.get('/health');
     return response.data.status === 'OK';
-  } catch (error) {
+  } catch {
     return false;
   }
 };
 
-export default api; 
+export default api;

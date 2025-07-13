@@ -1,5 +1,10 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -14,15 +19,15 @@ function App() {
   return (
     <AuthProvider>
       <Router>
-    <div className="App">
+        <div className='App'>
           <Routes>
             {/* Public routes */}
-            <Route path="/login" element={<LoginForm />} />
-            <Route path="/register" element={<RegisterForm />} />
-            
+            <Route path='/login' element={<LoginForm />} />
+            <Route path='/register' element={<RegisterForm />} />
+
             {/* Protected routes */}
             <Route
-              path="/dashboard"
+              path='/dashboard'
               element={
                 <ProtectedRoute>
                   <Dashboard />
@@ -30,24 +35,24 @@ function App() {
               }
             />
             <Route
-              path="/calls"
+              path='/calls'
               element={
                 <ProtectedRoute>
                   <CallPage />
                 </ProtectedRoute>
               }
             />
-            
+
             {/* Default redirect */}
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            
+            <Route path='/' element={<Navigate to='/dashboard' replace />} />
+
             {/* Catch all route */}
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            <Route path='*' element={<Navigate to='/dashboard' replace />} />
           </Routes>
-          
+
           {/* Toast notifications */}
           <ToastContainer
-            position="top-right"
+            position='top-right'
             autoClose={5000}
             hideProgressBar={false}
             newestOnTop={false}
@@ -56,9 +61,9 @@ function App() {
             pauseOnFocusLoss
             draggable
             pauseOnHover
-            theme="light"
+            theme='light'
           />
-    </div>
+        </div>
       </Router>
     </AuthProvider>
   );
