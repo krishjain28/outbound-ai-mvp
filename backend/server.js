@@ -184,17 +184,6 @@ app.get('/api/health', asyncHandler(async (req, res) => {
 // Global error handling middleware
 app.use(globalErrorHandler);
 
-// TEMPORARY: Debug route to check environment variables
-app.get('/api/env', asyncHandler(async (req, res) => {
-  res.json({
-    DEEPGRAM_API_KEY: process.env.DEEPGRAM_API_KEY ? 'SET' : 'NOT SET',
-    ELEVENLABS_API_KEY: process.env.ELEVENLABS_API_KEY ? 'SET' : 'NOT SET',
-    ELEVENLABS_VOICE_ID: process.env.ELEVENLABS_VOICE_ID ? 'SET' : 'NOT SET',
-    TELNYX_API_KEY: process.env.TELNYX_API_KEY ? 'SET' : 'NOT SET',
-    OPENAI_API_KEY: process.env.OPENAI_API_KEY ? 'SET' : 'NOT SET'
-  });
-}));
-
 // Welcome page for root URL
 app.get('/', asyncHandler(async (req, res) => {
   res.json({
