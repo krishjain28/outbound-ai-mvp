@@ -10,14 +10,23 @@ const OpenAI = require('openai');
 const speechService = require('../services/speechService');
 const conversationService = require('../services/conversationService');
 const { calls: logger } = require('../utils/logger');
+const { 
+  asyncHandler, 
+  handleApiError, 
+  handleDatabaseError,
+  ValidationError,
+  ConfigurationError,
+  validateRequired,
+  validateConfiguration 
+} = require('../utils/errorHandler');
 
 // Initialize OpenAI lazily
 let openai = null;
 function getOpenAI() {
   if (!openai) {
-    if (!process.env.OPENAI_API_KEY) {
-      throw new Error('OPENAI_API_KEY environment variable is required');
-    }
+    validateConfiguration(process.env, ['OPENAI_API_KEY'], { 
+      operation: 'openai_initialization' 
+    });
     openai = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY,
     });
@@ -31,10 +40,8 @@ const TELNYX_PHONE_NUMBER = process.env.TELNYX_PHONE_NUMBER || '+1234567890'; //
 
 // Validate required environment variables
 const validateEnvironmentVariables = () => {
-  const missing = [];
-  if (!process.env.TELNYX_API_KEY) missing.push('TELNYX_API_KEY');
-  if (!process.env.TELNYX_PHONE_NUMBER) missing.push('TELNYX_PHONE_NUMBER');
-  if (!process.env.OPENAI_API_KEY) missing.push('OPENAI_API_KEY');
+  const required = ['TELNYX_API_KEY', 'TELNYX_PHONE_NUMBER', 'OPENAI_API_KEY'];
+  const missing = required.filter(key => !process.env[key]);
 
   // Optional but recommended for enhanced features
   const optional = [];
@@ -71,58 +78,49 @@ const telnyxAPI = axios.create({
 // @route   GET /api/calls/config-status
 // @desc    Check configuration status
 // @access  Private
-router.get('/config-status', auth, async (req, res) => {
-  try {
-    const config = {
-      // Required APIs
-      telnyx_api_key: !!process.env.TELNYX_API_KEY,
-      telnyx_phone_number: !!process.env.TELNYX_PHONE_NUMBER,
-      openai_api_key: !!process.env.OPENAI_API_KEY,
-      backend_url: process.env.BACKEND_URL || 'http://localhost:5001',
-      phone_number_configured:
-        process.env.TELNYX_PHONE_NUMBER || 'Not configured',
+router.get('/config-status', auth, asyncHandler(async (req, res) => {
+  const config = {
+    // Required APIs
+    telnyx_api_key: !!process.env.TELNYX_API_KEY,
+    telnyx_phone_number: !!process.env.TELNYX_PHONE_NUMBER,
+    openai_api_key: !!process.env.OPENAI_API_KEY,
+    backend_url: process.env.BACKEND_URL || 'http://localhost:5001',
+    phone_number_configured:
+      process.env.TELNYX_PHONE_NUMBER || 'Not configured',
 
-      // Enhanced features
-      deepgram_api_key: !!process.env.DEEPGRAM_API_KEY,
-      elevenlabs_api_key: !!process.env.ELEVENLABS_API_KEY,
-      elevenlabs_voice_id: process.env.ELEVENLABS_VOICE_ID || 'Default (Adam)',
+    // Enhanced features
+    deepgram_api_key: !!process.env.DEEPGRAM_API_KEY,
+    elevenlabs_api_key: !!process.env.ELEVENLABS_API_KEY,
+    elevenlabs_voice_id: process.env.ELEVENLABS_VOICE_ID || 'Default (Adam)',
 
-      // Feature status
-      enhanced_speech_recognition: !!process.env.DEEPGRAM_API_KEY,
-      enhanced_voice_synthesis: !!process.env.ELEVENLABS_API_KEY,
-      natural_conversation: true, // Always available with GPT-4
-    };
+    // Feature status
+    enhanced_speech_recognition: !!process.env.DEEPGRAM_API_KEY,
+    enhanced_voice_synthesis: !!process.env.ELEVENLABS_API_KEY,
+    natural_conversation: true, // Always available with GPT-4
+  };
 
-    const isConfigured =
-      config.telnyx_api_key &&
-      config.telnyx_phone_number &&
-      config.openai_api_key;
-    const isEnhanced = config.deepgram_api_key && config.elevenlabs_api_key;
+  const isConfigured =
+    config.telnyx_api_key &&
+    config.telnyx_phone_number &&
+    config.openai_api_key;
+  const isEnhanced = config.deepgram_api_key && config.elevenlabs_api_key;
 
-    let message = 'Basic configuration incomplete';
-    if (isConfigured && isEnhanced) {
-      message = 'All APIs configured - Full enhanced features available';
-    } else if (isConfigured) {
-      message =
-        'Basic APIs configured - Enhanced features available with additional API keys';
-    }
-
-    res.json({
-      success: true,
-      configured: isConfigured,
-      enhanced: isEnhanced,
-      config,
-      message,
-    });
-  } catch (error) {
-    console.error('Config status error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error checking configuration',
-      error: error.message,
-    });
+  let message = 'Basic configuration incomplete';
+  if (isConfigured && isEnhanced) {
+    message = 'All APIs configured - Full enhanced features available';
+  } else if (isConfigured) {
+    message =
+      'Basic APIs configured - Enhanced features available with additional API keys';
   }
-});
+
+  res.json({
+    success: true,
+    configured: isConfigured,
+    enhanced: isEnhanced,
+    config,
+    message,
+  });
+}));
 
 // @route   POST /api/calls/initiate
 // @desc    Initiate a new call
@@ -140,160 +138,146 @@ router.post(
     body('leadName').optional().isString(),
     body('aiPrompt').optional().isString(),
   ],
-  async (req, res) => {
-    try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
-
-      const { phoneNumber, leadName, aiPrompt } = req.body;
-
-      // Clean phone number (remove spaces, dashes, parentheses)
-      const cleanPhoneNumber = phoneNumber.replace(/[\s\-()]/g, '');
-
-      // Format phone number for international calling
-      let formattedPhoneNumber;
-      if (cleanPhoneNumber.startsWith('+')) {
-        // Already has country code
-        formattedPhoneNumber = cleanPhoneNumber;
-      } else if (cleanPhoneNumber.length === 10) {
-        // US/Canada number without country code
-        formattedPhoneNumber = `+1${cleanPhoneNumber}`;
-      } else {
-        // International number - user must provide country code
-        formattedPhoneNumber = `+${cleanPhoneNumber}`;
-      }
-
-      // Create call record in database
-      const call = new Call({
-        userId: req.user.id,
-        phoneNumber: formattedPhoneNumber,
-        leadName: leadName || 'Unknown Lead',
-        aiPrompt:
-          aiPrompt ||
-          'You are a professional sales representative. Be conversational, friendly, and focus on qualifying the lead.',
-        status: 'initiated',
-      });
-
-      await call.save();
-
-      // Validate environment variables
-      if (!validateEnvironmentVariables()) {
-        console.error('Missing Telnyx configuration');
-        return res.status(500).json({
-          success: false,
-          message:
-            'Call service not configured. Please set up your Telnyx and OpenAI API keys in the backend .env file.',
-          error: 'Missing API credentials',
-          details: 'Check the server console for setup instructions',
-        });
-      }
-
-      console.log(
-        `Initiating call to ${formattedPhoneNumber} from ${TELNYX_PHONE_NUMBER}`
-      );
-
-      // Initiate call via Telnyx
-      try {
-        // Use the configured connection ID
-        const connectionId = process.env.TELNYX_CONNECTION_ID;
-
-        if (!connectionId) {
-          throw new Error(
-            'TELNYX_CONNECTION_ID not configured. Please create a Call Control Application in Telnyx Portal.'
-          );
-        }
-
-        const telnyxResponse = await telnyxAPI.post('/calls', {
-          to: formattedPhoneNumber,
-          from: TELNYX_PHONE_NUMBER,
-          connection_id: connectionId,
-          outbound_voice_profile_id: '2735262782093001961', // Use the Default profile
-          webhook_url: `${process.env.BACKEND_URL}/api/calls/webhook`,
-          webhook_url_method: 'POST',
-          record: 'record-from-answer',
-          record_format: 'mp3',
-          record_channels: 'dual',
-          client_state: call._id.toString(), // Pass our call ID to track the call
-        });
-
-        console.log(
-          'Telnyx call initiated:',
-          telnyxResponse.data.data.call_control_id
-        );
-
-        // Update call with Telnyx call ID
-        call.callId = telnyxResponse.data.data.call_control_id;
-        call.status = 'ringing';
-        await call.save();
-
-        res.json({
-          success: true,
-          message: 'Call initiated successfully',
-          _id: call._id,
-          callId: call.callId,
-          phoneNumber: call.phoneNumber,
-          leadName: call.leadName,
-          status: call.status,
-          startTime: call.startTime,
-          conversation: call.conversation,
-          outcome: call.outcome,
-          qualificationScore: call.qualificationScore,
-          meetingBooked: call.meetingBooked,
-          createdAt: call.createdAt,
-        });
-      } catch (telnyxError) {
-        console.error(
-          'Telnyx API Error:',
-          telnyxError.response?.data || telnyxError.message
-        );
-
-        const errorDetail =
-          telnyxError.response?.data?.errors?.[0]?.detail ||
-          telnyxError.message;
-        const errorCode = telnyxError.response?.data?.errors?.[0]?.code;
-
-        // Update call status to failed
-        call.status = 'failed';
-        call.notes = `Telnyx Error: ${errorDetail}`;
-        await call.save();
-
-        // Provide specific error messages for common issues
-        let userMessage = 'Failed to initiate call';
-        if (
-          errorCode === 10010 ||
-          errorDetail.includes('whitelisted countries')
-        ) {
-          userMessage =
-            'International calling not enabled for this destination. Please use a US number (+1) or enable international calling in your Telnyx account.';
-        } else if (errorCode === '10015') {
-          userMessage =
-            'Call Control Application configuration error. Please check your Telnyx setup.';
-        } else if (errorCode === '10032') {
-          userMessage = 'Invalid API parameter. Please contact support.';
-        }
-
-        res.status(500).json({
-          success: false,
-          message: userMessage,
-          error: errorDetail,
-          errorCode: errorCode,
-          suggestion:
-            errorCode === 10010
-              ? 'Try using a US phone number like +1-555-123-4567 for testing'
-              : null,
-        });
-      }
-    } catch (error) {
-      console.error('Call initiation error:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Server error',
-        error: error.message,
+  asyncHandler(async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      throw new ValidationError('Invalid input data', { 
+        validationErrors: errors.array() 
       });
     }
-  }
+
+    const { phoneNumber, leadName, aiPrompt } = req.body;
+
+    // Clean phone number (remove spaces, dashes, parentheses)
+    const cleanPhoneNumber = phoneNumber.replace(/[\s\-()]/g, '');
+
+    // Format phone number for international calling
+    let formattedPhoneNumber;
+    if (cleanPhoneNumber.startsWith('+')) {
+      // Already has country code
+      formattedPhoneNumber = cleanPhoneNumber;
+    } else if (cleanPhoneNumber.length === 10) {
+      // US/Canada number without country code
+      formattedPhoneNumber = `+1${cleanPhoneNumber}`;
+    } else {
+      // International number - user must provide country code
+      formattedPhoneNumber = `+${cleanPhoneNumber}`;
+    }
+
+    // Create call record in database
+    const call = new Call({
+      userId: req.user.id,
+      phoneNumber: formattedPhoneNumber,
+      leadName: leadName || 'Unknown Lead',
+      aiPrompt:
+        aiPrompt ||
+        'You are a professional sales representative. Be conversational, friendly, and focus on qualifying the lead.',
+      status: 'initiated',
+    });
+
+    await call.save();
+
+    // Validate environment variables
+    if (!validateEnvironmentVariables()) {
+      throw new ConfigurationError('Call service not configured', {
+        details: 'Please set up your Telnyx and OpenAI API keys in the backend .env file'
+      });
+    }
+
+    logger.info(`Initiating call to ${formattedPhoneNumber} from ${TELNYX_PHONE_NUMBER}`);
+
+    // Initiate call via Telnyx
+    try {
+      // Use the configured connection ID
+      const connectionId = process.env.TELNYX_CONNECTION_ID;
+
+      if (!connectionId) {
+        throw new Error(
+          'TELNYX_CONNECTION_ID not configured. Please create a Call Control Application in Telnyx Portal.'
+        );
+      }
+
+      const telnyxResponse = await telnyxAPI.post('/calls', {
+        to: formattedPhoneNumber,
+        from: TELNYX_PHONE_NUMBER,
+        connection_id: connectionId,
+        outbound_voice_profile_id: '2735262782093001961', // Use the Default profile
+        webhook_url: `${process.env.BACKEND_URL}/api/calls/webhook`,
+        webhook_url_method: 'POST',
+        record: 'record-from-answer',
+        record_format: 'mp3',
+        record_channels: 'dual',
+        client_state: call._id.toString(), // Pass our call ID to track the call
+      });
+
+      console.log(
+        'Telnyx call initiated:',
+        telnyxResponse.data.data.call_control_id
+      );
+
+      // Update call with Telnyx call ID
+      call.callId = telnyxResponse.data.data.call_control_id;
+      call.status = 'ringing';
+      await call.save();
+
+      res.json({
+        success: true,
+        message: 'Call initiated successfully',
+        _id: call._id,
+        callId: call.callId,
+        phoneNumber: call.phoneNumber,
+        leadName: call.leadName,
+        status: call.status,
+        startTime: call.startTime,
+        conversation: call.conversation,
+        outcome: call.outcome,
+        qualificationScore: call.qualificationScore,
+        meetingBooked: call.meetingBooked,
+        createdAt: call.createdAt,
+      });
+    } catch (telnyxError) {
+      console.error(
+        'Telnyx API Error:',
+        telnyxError.response?.data || telnyxError.message
+      );
+
+      const errorDetail =
+        telnyxError.response?.data?.errors?.[0]?.detail ||
+        telnyxError.message;
+      const errorCode = telnyxError.response?.data?.errors?.[0]?.code;
+
+      // Update call status to failed
+      call.status = 'failed';
+      call.notes = `Telnyx Error: ${errorDetail}`;
+      await call.save();
+
+      // Provide specific error messages for common issues
+      let userMessage = 'Failed to initiate call';
+      if (
+        errorCode === 10010 ||
+        errorDetail.includes('whitelisted countries')
+      ) {
+        userMessage =
+          'International calling not enabled for this destination. Please use a US number (+1) or enable international calling in your Telnyx account.';
+      } else if (errorCode === '10015') {
+        userMessage =
+          'Call Control Application configuration error. Please check your Telnyx setup.';
+      } else if (errorCode === '10032') {
+        userMessage = 'Invalid API parameter. Please contact support.';
+      }
+
+      res.status(500).json({
+        success: false,
+        message: userMessage,
+        error: errorDetail,
+        errorCode: errorCode,
+        suggestion:
+          errorCode === 10010
+            ? 'Try using a US phone number like +1-555-123-4567 for testing'
+            : null,
+      });
+    }
+  })
 );
 
 // @route   POST /api/calls/webhook

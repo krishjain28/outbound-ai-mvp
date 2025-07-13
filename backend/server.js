@@ -5,10 +5,18 @@ require('dotenv').config();
 // Import logging utilities
 const { app: logger, database: dbLogger, worker: workerLogger } = require('./utils/logger');
 
+// Import error handling utilities
+const { 
+  errorHandler: globalErrorHandler, 
+  asyncHandler, 
+  handleDatabaseError,
+  validateConfiguration,
+  ConfigurationError 
+} = require('./utils/errorHandler');
+
 // Import production middleware
 const {
   productionSecurity,
-  errorHandler,
   rateLimits,
 } = require('./middleware/security');
 const {
@@ -47,7 +55,7 @@ app.use('/api/auth', rateLimits.auth);
 app.use('/api/calls', rateLimits.calls);
 app.use('/api/calls/webhook', rateLimits.webhooks);
 
-// Connect to MongoDB with better error handling
+// Connect to MongoDB with enhanced error handling
 const connectDB = async () => {
   try {
     const mongoURI =
@@ -60,16 +68,16 @@ const connectDB = async () => {
       serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
       socketTimeoutMS: 45000, // Close sockets after 45s of inactivity
       maxPoolSize: 10, // Maintain up to 10 socket connections
-      // serverSelectionRetryFrequency: 2000, // This option is not supported
       heartbeatFrequencyMS: 10000, // Send a ping every 10s
     });
 
     dbLogger.info('MongoDB connected successfully');
   } catch (error) {
-    dbLogger.error('MongoDB connection error', { 
-      error: error.message,
-      stack: error.stack 
+    const dbError = handleDatabaseError(error, {
+      operation: 'connection',
+      mongoURI: mongoURI.replace(/\/\/.*@/, '//***:***@')
     });
+    
     dbLogger.info('Possible solutions:', {
       solutions: [
         'Check if your IP is whitelisted in MongoDB Atlas',
@@ -93,23 +101,23 @@ app.use('/api/user', userRoutes);
 app.use('/api/calls', callRoutes);
 
 // Worker management endpoints
-app.get('/api/workers/status', (req, res) => {
+app.get('/api/workers/status', asyncHandler(async (req, res) => {
   const workerStatus = integratedWorkerService.getStatus();
   res.json(workerStatus);
-});
+}));
 
-app.post('/api/workers/start', (req, res) => {
+app.post('/api/workers/start', asyncHandler(async (req, res) => {
   integratedWorkerService.start();
   res.json({ message: 'Workers started successfully' });
-});
+}));
 
-app.post('/api/workers/stop', (req, res) => {
+app.post('/api/workers/stop', asyncHandler(async (req, res) => {
   integratedWorkerService.stop();
   res.json({ message: 'Workers stopped successfully' });
-});
+}));
 
 // Enhanced health check endpoint with monitoring data
-app.get('/health', (req, res) => {
+app.get('/health', asyncHandler(async (req, res) => {
   const healthStatus = getHealthStatus();
   const workerStatus = integratedWorkerService.getStatus();
 
@@ -117,9 +125,9 @@ app.get('/health', (req, res) => {
     ...healthStatus,
     workers: workerStatus,
   });
-});
+}));
 
-app.get('/api/health', (req, res) => {
+app.get('/api/health', asyncHandler(async (req, res) => {
   const healthStatus = getHealthStatus();
   const workerStatus = integratedWorkerService.getStatus();
 
@@ -127,15 +135,22 @@ app.get('/api/health', (req, res) => {
     ...healthStatus,
     workers: workerStatus,
   });
-});
+}));
 
-// Production error handling middleware
-app.use(errorHandler);
+// Global error handling middleware
+app.use(globalErrorHandler);
 
 // 404 handler
-app.use('*', (req, res) => {
-  res.status(404).json({ message: 'Route not found' });
-});
+app.use('*', asyncHandler(async (req, res) => {
+  res.status(404).json({ 
+    error: {
+      type: 'NOT_FOUND',
+      message: 'Route not found'
+    },
+    timestamp: new Date().toISOString(),
+    requestId: req.headers['x-request-id']
+  });
+}));
 
 const PORT = process.env.PORT || 5001;
 
@@ -183,8 +198,6 @@ app.listen = function (port, callback) {
 };
 
 app.listen(PORT);
-console.log('🔧 Integrated worker service configured');
-console.log(
-  '🚀 Worker endpoints: /api/workers/status, /api/workers/start, /api/workers/stop'
-);
-console.log('🔧 Deployment timestamp:', new Date().toISOString());
+logger.info('🔧 Integrated worker service configured');
+logger.info('🚀 Worker endpoints: /api/workers/status, /api/workers/start, /api/workers/stop');
+logger.info('🔧 Deployment timestamp:', { timestamp: new Date().toISOString() });

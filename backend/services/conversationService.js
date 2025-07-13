@@ -1,5 +1,10 @@
 const OpenAI = require('openai');
 const { conversation: logger } = require('../utils/logger');
+const { 
+  handleConversationError, 
+  ConfigurationError,
+  validateConfiguration 
+} = require('../utils/errorHandler');
 
 class ConversationService {
   constructor() {
@@ -7,18 +12,6 @@ class ConversationService {
 
     // Conversation memory for each call
     this.conversationMemory = new Map();
-  }
-
-  // Initialize OpenAI client when needed
-  getOpenAI() {
-    if (!this.openai) {
-      if (!process.env.OPENAI_API_KEY) {
-        throw new Error('OPENAI_API_KEY environment variable is required');
-      }
-      this.openai = new OpenAI({
-        apiKey: process.env.OPENAI_API_KEY,
-      });
-    }
 
     // Professional SDR personality
     this.systemPrompt = `You are Mike, a highly experienced and professional Sales Development Representative (SDR) with 5+ years of experience at WebCraft Solutions. You specialize in helping small to medium-sized businesses establish their online presence through professional website development.
@@ -74,6 +67,20 @@ IMPORTANT RULES:
 Remember: You're having a real conversation with a real person. Be human, be genuine, and focus on helping them solve their business challenges.`;
   }
 
+  // Initialize OpenAI client when needed
+  getOpenAI() {
+    if (!this.openai) {
+      validateConfiguration(process.env, ['OPENAI_API_KEY'], { 
+        operation: 'openai_initialization' 
+      });
+      
+      this.openai = new OpenAI({
+        apiKey: process.env.OPENAI_API_KEY,
+      });
+    }
+    return this.openai;
+  }
+
   /**
    * Initialize conversation memory for a call
    */
@@ -90,7 +97,7 @@ Remember: You're having a real conversation with a real person. Be human, be gen
     };
 
     this.conversationMemory.set(callId, conversationContext);
-    console.log(`🧠 Initialized conversation memory for call ${callId}`);
+    logger.info(`🧠 Initialized conversation memory for call ${callId}`);
 
     return conversationContext;
   }
@@ -164,9 +171,7 @@ Remember: You're having a real conversation with a real person. Be human, be gen
         messages.push({ role: 'system', content: stageContext });
       }
 
-      console.log(
-        `🤖 Generating GPT-4 response for call ${callId}, turn ${context.turnCount}`
-      );
+      logger.info(`🤖 Generating GPT-4 response for call ${callId}, turn ${context.turnCount}`);
 
       const completion = await this.getOpenAI().chat.completions.create({
         model: 'gpt-4',
@@ -192,7 +197,7 @@ Remember: You're having a real conversation with a real person. Be human, be gen
       // Extract qualification data
       this.extractQualificationData(context, customerInput);
 
-      console.log(`💬 Generated response for call ${callId}: "${aiResponse}"`);
+      logger.info(`💬 Generated response for call ${callId}: "${aiResponse}"`);
 
       return {
         success: true,
@@ -202,25 +207,16 @@ Remember: You're having a real conversation with a real person. Be human, be gen
         qualificationData: context.qualificationData,
       };
     } catch (error) {
-      console.error('❌ Error generating AI response:', error);
-
-      // Fallback response
-      const fallbackResponses = [
-        "I'm sorry, could you repeat that? I want to make sure I understand you correctly.",
-        "That's interesting. Can you tell me a bit more about that?",
-        "I see. What's your main concern about that?",
-        'Got it. How has that been working for you so far?',
-      ];
-
-      const fallbackResponse =
-        fallbackResponses[Math.floor(Math.random() * fallbackResponses.length)];
-
+      const conversationError = handleConversationError(error, { 
+        operation: 'generate_response',
+        callId,
+        stage 
+      });
+      logger.error('❌ Error generating AI response:', { error: conversationError.message });
       return {
         success: false,
-        response: fallbackResponse,
-        error: error.message,
-        stage: 'conversation',
-        turnCount: 0,
+        error: conversationError.message,
+        fallbackResponse: "I apologize, but I'm having trouble processing that right now. Could you repeat that?",
       };
     }
   }

@@ -1,6 +1,10 @@
 // backend/services/integratedWorkerService.js
 const Call = require('../models/Call');
 const { worker: logger } = require('../utils/logger');
+const { 
+  handleWorkerError, 
+  handleDatabaseError 
+} = require('../utils/errorHandler');
 
 class IntegratedWorkerService {
   constructor() {
@@ -44,7 +48,7 @@ class IntegratedWorkerService {
         await this.processCall(call);
       }
     } catch (error) {
-      console.error('❌ Error in call processing:', error);
+      handleWorkerError(error, 'call processing');
     }
   }
 
@@ -66,13 +70,13 @@ class IntegratedWorkerService {
         await this.analyzeConversation(call);
       }
     } catch (error) {
-      console.error('❌ Error in conversation processing:', error);
+      handleWorkerError(error, 'conversation processing');
     }
   }
 
   async processCall(call) {
     try {
-      console.log(`🔄 Processing call ${call._id} - Status: ${call.status}`);
+      logger.info(`🔄 Processing call ${call._id} - Status: ${call.status}`);
 
       call.lastProcessed = new Date();
       await call.save();
@@ -80,13 +84,13 @@ class IntegratedWorkerService {
       // Add your call processing logic here
       // This replaces the callWorker.js functionality
     } catch (error) {
-      console.error(`❌ Error processing call ${call._id}:`, error);
+      handleDatabaseError(error, `Error processing call ${call._id}`);
     }
   }
 
   async analyzeConversation(call) {
     try {
-      console.log(`🤖 Analyzing conversation for call ${call._id}`);
+      logger.info(`🤖 Analyzing conversation for call ${call._id}`);
 
       call.lastAnalyzed = new Date();
       await call.save();
@@ -94,7 +98,7 @@ class IntegratedWorkerService {
       // Add your conversation analysis logic here
       // This replaces the conversationWorker.js functionality
     } catch (error) {
-      console.error(`❌ Error analyzing conversation ${call._id}:`, error);
+      handleDatabaseError(error, `Error analyzing conversation ${call._id}`);
     }
   }
 

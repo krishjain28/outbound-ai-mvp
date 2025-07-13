@@ -3,6 +3,12 @@ const { ElevenLabsClient } = require('@elevenlabs/elevenlabs-js');
 const WebSocket = require('ws');
 const axios = require('axios');
 const { speech: logger } = require('../utils/logger');
+const { 
+  handleSpeechError, 
+  handleApiError, 
+  ConfigurationError,
+  validateConfiguration 
+} = require('../utils/errorHandler');
 
 class SpeechService {
   constructor() {
@@ -16,12 +22,14 @@ class SpeechService {
         this.deepgram = createClient(process.env.DEEPGRAM_API_KEY);
         logger.info('Deepgram client initialized successfully');
       } catch (error) {
-        logger.warn('Failed to initialize Deepgram client', { error: error.message });
+        const speechError = handleSpeechError(error, { 
+          operation: 'deepgram_initialization',
+          service: 'deepgram'
+        });
+        logger.warn('Failed to initialize Deepgram client', { error: speechError.message });
       }
     } else {
-      console.warn(
-        '⚠️ Deepgram API key not provided - speech recognition will be disabled'
-      );
+      logger.warn('⚠️ Deepgram API key not provided - speech recognition will be disabled');
     }
 
     // Initialize ElevenLabs client (only if API key is available)
@@ -36,15 +44,14 @@ class SpeechService {
         });
         logger.info('ElevenLabs client initialized successfully');
       } catch (error) {
-        console.warn(
-          '⚠️ Failed to initialize ElevenLabs client:',
-          error.message
-        );
+        const speechError = handleSpeechError(error, { 
+          operation: 'elevenlabs_initialization',
+          service: 'elevenlabs'
+        });
+        logger.warn('⚠️ Failed to initialize ElevenLabs client:', { error: speechError.message });
       }
     } else {
-      console.warn(
-        '⚠️ ElevenLabs API key not provided - enhanced TTS will be disabled'
-      );
+      logger.warn('⚠️ ElevenLabs API key not provided - enhanced TTS will be disabled');
     }
 
     // Optimized voice configuration for faster processing
@@ -79,15 +86,11 @@ class SpeechService {
     try {
       // Check if Deepgram is available
       if (!this.deepgram) {
-        console.warn(
-          '⚠️ Deepgram not available - using fallback speech recognition'
-        );
+        logger.warn('⚠️ Deepgram not available - using fallback speech recognition');
         return { success: false, error: 'Deepgram API key not configured' };
       }
 
-      console.log(
-        `🎙️ Starting Deepgram real-time speech recognition for call ${callControlId}`
-      );
+      logger.info(`🎙️ Starting Deepgram real-time speech recognition for call ${callControlId}`);
 
       // Create Deepgram live transcription with optimized settings
       const deepgramLive = this.deepgram.listen.live({
@@ -107,24 +110,28 @@ class SpeechService {
 
       // Handle Deepgram events
       deepgramLive.on('open', () => {
-        console.log('✅ Deepgram connection opened');
+        logger.info('✅ Deepgram connection opened');
       });
 
       deepgramLive.on('results', data => {
         const transcript = data.channel?.alternatives?.[0]?.transcript;
         if (transcript && transcript.trim() && data.is_final) {
-          console.log(`📝 Final transcript: "${transcript}"`);
+          logger.info(`📝 Final transcript: "${transcript}"`);
           onTranscript(transcript);
         }
       });
 
       deepgramLive.on('error', error => {
-        console.error('❌ Deepgram error:', error);
-        onError(error);
+        const speechError = handleSpeechError(error, { 
+          operation: 'deepgram_stream',
+          callControlId 
+        });
+        logger.error('❌ Deepgram error:', { error: speechError.message });
+        onError(speechError);
       });
 
       deepgramLive.on('close', () => {
-        console.log('🔒 Deepgram connection closed');
+        logger.info('🔒 Deepgram connection closed');
       });
 
       // Store session for cleanup
@@ -148,9 +155,13 @@ class SpeechService {
 
       return { success: true, sessionId: callControlId };
     } catch (error) {
-      console.error('❌ Failed to start speech recognition:', error);
-      onError(error);
-      return { success: false, error: error.message };
+      const speechError = handleSpeechError(error, { 
+        operation: 'start_speech_recognition',
+        callControlId 
+      });
+      logger.error('❌ Failed to start speech recognition:', { error: speechError.message });
+      onError(speechError);
+      return { success: false, error: speechError.message };
     }
   }
 
@@ -174,14 +185,15 @@ class SpeechService {
         }
       );
 
-      console.log('✅ Telnyx media streaming started');
+      logger.info('✅ Telnyx media streaming started');
       return { success: true, data: response.data };
     } catch (error) {
-      console.error(
-        '❌ Telnyx media stream error:',
-        error.response?.data || error.message
-      );
-      return { success: false, error: error.response?.data || error.message };
+      const apiError = handleApiError(error, { 
+        operation: 'telnyx_media_stream',
+        callControlId 
+      });
+      logger.error('❌ Telnyx media stream error:', { error: apiError.message });
+      return { success: false, error: apiError.message };
     }
   }
 
@@ -194,15 +206,11 @@ class SpeechService {
     try {
       // Check if ElevenLabs is available
       if (!this.elevenlabs) {
-        console.warn(
-          '⚠️ ElevenLabs not available - falling back to Telnyx TTS'
-        );
+        logger.warn('⚠️ ElevenLabs not available - falling back to Telnyx TTS');
         return { success: false, error: 'ElevenLabs not configured' };
       }
 
-      console.log(
-        `🎤 Generating ElevenLabs speech for call ${callControlId}: "${text}"`
-      );
+      logger.info(`🎤 Generating ElevenLabs speech for call ${callControlId}: "${text}"`);
 
       // Optimize text for faster processing
       const optimizedText = this.optimizeTextForSpeech(text);
@@ -235,10 +243,15 @@ class SpeechService {
         voiceId: this.voiceConfig.voice_id,
       };
     } catch (error) {
-      console.error('❌ ElevenLabs TTS error:', error);
+      const speechError = handleSpeechError(error, { 
+        operation: 'elevenlabs_tts',
+        callControlId,
+        text 
+      });
+      logger.error('❌ ElevenLabs TTS error:', { error: speechError.message });
       return {
         success: false,
-        error: error.message,
+        error: speechError.message,
         fallbackText: text,
       };
     }
@@ -270,15 +283,13 @@ class SpeechService {
    */
   async speakText(callControlId, text) {
     try {
-      console.log(
-        `🎤 Starting optimized speech for call ${callControlId}: "${text}"`
-      );
+      logger.info(`🎤 Starting optimized speech for call ${callControlId}: "${text}"`);
 
       // Generate speech with ElevenLabs
       const speechResult = await this.generateSpeech(text, callControlId);
 
       if (!speechResult.success) {
-        console.log('⚠️ ElevenLabs failed, using Telnyx fallback');
+        logger.info('⚠️ ElevenLabs failed, using Telnyx fallback');
         return this.speakWithTelnyxTTS(callControlId, text);
       }
 
@@ -299,11 +310,15 @@ class SpeechService {
         }
       );
 
-      console.log('✅ ElevenLabs speech playback started successfully');
+      logger.info('✅ ElevenLabs speech playback started successfully');
       return { success: true, data: response.data };
     } catch (error) {
-      console.error('❌ Speech playback error:', error);
-      console.log('🔄 Falling back to Telnyx TTS');
+      const speechError = handleSpeechError(error, { 
+        operation: 'speech_playback',
+        callControlId 
+      });
+      logger.error('❌ Speech playback error:', { error: speechError.message });
+      logger.info('🔄 Falling back to Telnyx TTS');
       return this.speakWithTelnyxTTS(callControlId, text);
     }
   }
@@ -332,11 +347,16 @@ class SpeechService {
         }
       );
 
-      console.log('✅ Telnyx TTS successful');
+      logger.info('✅ Telnyx TTS successful');
       return { success: true, data: response.data };
     } catch (error) {
-      console.error('❌ Telnyx TTS fallback error:', error);
-      return { success: false, error: error.message };
+      const speechError = handleSpeechError(error, { 
+        operation: 'telnyx_tts_fallback',
+        callControlId,
+        text 
+      });
+      logger.error('❌ Telnyx TTS fallback error:', { error: speechError.message });
+      return { success: false, error: speechError.message };
     }
   }
 
@@ -366,19 +386,27 @@ class SpeechService {
             }
           );
         } catch (stopError) {
-          console.warn('⚠️ Error stopping Telnyx stream:', stopError.message);
+          const apiError = handleApiError(stopError, { 
+            operation: 'stop_telnyx_stream',
+            callControlId 
+          });
+          logger.warn('⚠️ Error stopping Telnyx stream:', { error: apiError.message });
         }
 
         // Remove session
         this.activeSessions.delete(callControlId);
 
-        console.log(`✅ Speech recognition stopped for call ${callControlId}`);
+        logger.info(`✅ Speech recognition stopped for call ${callControlId}`);
       }
 
       return { success: true };
     } catch (error) {
-      console.error('❌ Error stopping speech recognition:', error);
-      return { success: false, error: error.message };
+      const speechError = handleSpeechError(error, { 
+        operation: 'stop_speech_recognition',
+        callControlId 
+      });
+      logger.error('❌ Error stopping speech recognition:', { error: speechError.message });
+      return { success: false, error: speechError.message };
     }
   }
 
@@ -386,7 +414,7 @@ class SpeechService {
    * Clean up all active sessions
    */
   async cleanup() {
-    console.log('🧹 Cleaning up all speech recognition sessions');
+    logger.info('🧹 Cleaning up all speech recognition sessions');
 
     for (const [callControlId] of this.activeSessions) {
       await this.stopSpeechRecognition(callControlId);
@@ -405,7 +433,11 @@ class SpeechService {
         // Send audio data to Deepgram
         session.deepgramLive.send(audioData);
       } catch (error) {
-        console.error('❌ Error sending audio to Deepgram:', error);
+        const speechError = handleSpeechError(error, { 
+          operation: 'send_audio_to_deepgram',
+          callControlId 
+        });
+        logger.error('❌ Error sending audio to Deepgram:', { error: speechError.message });
       }
     }
   }
