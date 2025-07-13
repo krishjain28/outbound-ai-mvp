@@ -5,7 +5,7 @@
  * Tests the MongoDB Atlas connection string format
  */
 
-const mongoose = require('mongoose');
+const mongoose = require('./backend/node_modules/mongoose');
 
 // Test connection string from render.yaml
 const testMongoURI = 'mongodb+srv://krishjain:Krish@123@cluster0.v7ckm.mongodb.net/outbound-ai-mvp?retryWrites=true&w=majority';
