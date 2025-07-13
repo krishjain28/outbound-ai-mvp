@@ -5,8 +5,8 @@ services:
     runtime: node
     plan: starter
     region: oregon
-    buildCommand: cd backend && npm install
-    startCommand: cd backend && node server.js
+    buildCommand: npm run build
+    startCommand: npm start
     healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV
@@ -49,7 +49,7 @@ services:
     runtime: node
     plan: starter
     region: oregon
-    buildCommand: cd backend && npm install
+    buildCommand: npm run build
     startCommand: cd backend && node workers/callWorker.js
     envVars:
       - key: NODE_ENV
@@ -86,7 +86,7 @@ services:
     runtime: node
     plan: starter
     region: oregon
-    buildCommand: cd backend && npm install
+    buildCommand: npm run build
     startCommand: cd backend && node workers/conversationWorker.js
     envVars:
       - key: NODE_ENV
@@ -112,4 +112,4 @@ databases:
     databaseName: outboundaimvp
     user: outboundaiuser
     plan: starter
-    region: oregon 
+    region: oregon
