@@ -15,7 +15,7 @@ services:
         value: 10000
       - key: MONGODB_URI
         fromDatabase:
-          name: outbound-ai-mongodb
+          name: outboundaimongodb
           property: connectionString
       - key: JWT_SECRET
         generateValue: true
@@ -56,7 +56,7 @@ services:
         value: production
       - key: MONGODB_URI
         fromDatabase:
-          name: outbound-ai-mongodb
+          name: outboundaimongodb
           property: connectionString
       - key: JWT_SECRET
         generateValue: true
@@ -93,7 +93,7 @@ services:
         value: production
       - key: MONGODB_URI
         fromDatabase:
-          name: outbound-ai-mongodb
+          name: outboundaimongodb
           property: connectionString
       - key: OPENAI_API_KEY
         sync: false
@@ -108,8 +108,8 @@ services:
     rootDir: .
 
 databases:
-  - name: outbound-ai-mongodb
-    databaseName: outbound-ai-mvp
-    user: outbound-ai-user
+  - name: outboundaimongodb
+    databaseName: outboundaimvp
+    user: outboundaiuser
     plan: starter
     region: oregon 
