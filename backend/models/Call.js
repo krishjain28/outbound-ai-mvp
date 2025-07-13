@@ -109,7 +109,7 @@ callSchema.index({ userId: 1, createdAt: -1 });
 callSchema.index({ phoneNumber: 1 });
 callSchema.index({ status: 1 });
 callSchema.index({ outcome: 1 });
-callSchema.index({ callId: 1 });
+// callId index is already created by unique: true property
 
 // Calculate duration when call ends
 callSchema.pre('save', function(next) {
