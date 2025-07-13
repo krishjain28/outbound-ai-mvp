@@ -187,16 +187,18 @@ app.use(globalErrorHandler);
 // Welcome page for root URL
 app.get('/', asyncHandler(async (req, res) => {
   res.json({
-    message: '🚀 AI SDR Backend API',
-    status: 'online',
+    name: 'AI SDR API',
     version: '1.0.0',
+    status: 'online',
     environment: process.env.NODE_ENV || 'development',
     timestamp: new Date().toISOString(),
+    documentation: '/dashboard',
+    health: '/health',
     endpoints: {
-      dashboard: '/dashboard',
-      health: '/health',
-      api: '/api',
-      docs: 'Visit /dashboard for full system status'
+      auth: '/api/auth',
+      user: '/api/user',
+      calls: '/api/calls',
+      workers: '/api/workers'
     }
   });
 }));

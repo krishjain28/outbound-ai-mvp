@@ -3,14 +3,14 @@ const router = express.Router();
 const { asyncHandler } = require('../utils/errorHandler');
 const { app: logger } = require('../utils/logger');
 
-// Dashboard HTML template
-const dashboardHTML = `
+// Professional API documentation HTML
+const apiDocsHTML = `
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI SDR Backend Dashboard</title>
+    <title>AI SDR API Documentation</title>
     <style>
         * {
             margin: 0;
@@ -19,168 +19,184 @@ const dashboardHTML = `
         }
         
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
             color: #333;
+            background: #f8f9fa;
         }
         
         .container {
             max-width: 1200px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 40px 20px;
         }
         
         .header {
-            text-align: center;
-            margin-bottom: 40px;
-            color: white;
+            background: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            border-left: 4px solid #007bff;
         }
         
         .header h1 {
-            font-size: 2.5rem;
+            color: #007bff;
+            font-size: 2rem;
             margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            font-weight: 600;
         }
         
         .header p {
-            font-size: 1.2rem;
-            opacity: 0.9;
+            color: #666;
+            font-size: 1.1rem;
+        }
+        
+        .status-section {
+            background: #fff;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
         }
         
         .status-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-        
-        .status-card {
-            background: white;
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            transition: transform 0.3s ease;
-        }
-        
-        .status-card:hover {
-            transform: translateY(-5px);
-        }
-        
-        .status-card h3 {
-            color: #667eea;
-            margin-bottom: 15px;
-            font-size: 1.3rem;
-        }
-        
-        .status-indicator {
-            display: inline-block;
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            margin-right: 8px;
-        }
-        
-        .status-online {
-            background: #4CAF50;
-            box-shadow: 0 0 10px #4CAF50;
-        }
-        
-        .status-offline {
-            background: #f44336;
-            box-shadow: 0 0 10px #f44336;
-        }
-        
-        .status-warning {
-            background: #ff9800;
-            box-shadow: 0 0 10px #ff9800;
-        }
-        
-        .endpoints-section {
-            background: white;
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            margin-bottom: 30px;
-        }
-        
-        .endpoints-section h3 {
-            color: #667eea;
-            margin-bottom: 20px;
-            font-size: 1.5rem;
-        }
-        
-        .endpoint-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 15px;
-        }
-        
-        .endpoint-item {
-            background: #f8f9fa;
-            border-radius: 8px;
-            padding: 15px;
-            border-left: 4px solid #667eea;
-        }
-        
-        .endpoint-method {
-            font-weight: bold;
-            color: #667eea;
-            margin-bottom: 5px;
-        }
-        
-        .endpoint-path {
-            font-family: 'Courier New', monospace;
-            color: #666;
-            font-size: 0.9rem;
-        }
-        
-        .stats-section {
-            background: white;
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-        }
-        
-        .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 20px;
         }
         
-        .stat-item {
-            text-align: center;
-            padding: 20px;
+        .status-item {
+            padding: 15px;
+            border-radius: 6px;
             background: #f8f9fa;
-            border-radius: 10px;
+            border-left: 3px solid #28a745;
         }
         
-        .stat-value {
-            font-size: 2rem;
-            font-weight: bold;
-            color: #667eea;
+        .status-item h4 {
+            color: #28a745;
             margin-bottom: 5px;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
         
-        .stat-label {
+        .status-item p {
+            color: #333;
+            font-weight: 500;
+        }
+        
+        .endpoints-section {
+            background: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        
+        .endpoints-section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+        
+        .endpoint-group {
+            margin-bottom: 25px;
+        }
+        
+        .endpoint-group h3 {
+            color: #007bff;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+            font-weight: 500;
+        }
+        
+        .endpoint-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            border-left: 3px solid #007bff;
+        }
+        
+        .endpoint-method {
+            display: inline-block;
+            background: #007bff;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-right: 10px;
+        }
+        
+        .endpoint-path {
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            color: #333;
+            font-size: 0.9rem;
+        }
+        
+        .endpoint-description {
             color: #666;
+            font-size: 0.85rem;
+            margin-top: 5px;
+        }
+        
+        .info-section {
+            background: #fff;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .info-section h2 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        
+        .info-item {
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+        
+        .info-item h4 {
+            color: #007bff;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .info-item p {
+            color: #333;
             font-size: 0.9rem;
         }
         
         .footer {
             text-align: center;
             margin-top: 40px;
-            color: white;
-            opacity: 0.8;
+            padding: 20px;
+            color: #666;
+            font-size: 0.9rem;
         }
         
         @media (max-width: 768px) {
             .container {
-                padding: 10px;
+                padding: 20px 10px;
             }
             
             .header h1 {
-                font-size: 2rem;
+                font-size: 1.5rem;
             }
             
             .status-grid {
@@ -192,108 +208,132 @@ const dashboardHTML = `
 <body>
     <div class="container">
         <div class="header">
-            <h1>🚀 AI SDR Backend Dashboard</h1>
-            <p>Real-time system status and monitoring</p>
+            <h1>AI SDR API</h1>
+            <p>Professional API for AI-powered Sales Development Representative system</p>
         </div>
         
-        <div class="status-grid">
-            <div class="status-card">
-                <h3>System Status</h3>
-                <div>
-                    <span class="status-indicator status-online"></span>
-                    <strong>Online</strong>
+        <div class="status-section">
+            <h2>System Status</h2>
+            <div class="status-grid">
+                <div class="status-item">
+                    <h4>API Status</h4>
+                    <p id="api-status">Online</p>
                 </div>
-                <p style="margin-top: 10px; color: #666;">Backend service is running and responding to requests.</p>
-            </div>
-            
-            <div class="status-card">
-                <h3>Database Connection</h3>
-                <div id="db-status">
-                    <span class="status-indicator status-online"></span>
-                    <strong>Connected</strong>
+                <div class="status-item">
+                    <h4>Database</h4>
+                    <p id="db-status">Connected</p>
                 </div>
-                <p style="margin-top: 10px; color: #666;">MongoDB Atlas connection is active.</p>
-            </div>
-            
-            <div class="status-card">
-                <h3>API Status</h3>
-                <div>
-                    <span class="status-indicator status-online"></span>
-                    <strong>Operational</strong>
+                <div class="status-item">
+                    <h4>Environment</h4>
+                    <p id="env-status">Production</p>
                 </div>
-                <p style="margin-top: 10px; color: #666;">All API endpoints are functioning normally.</p>
+                <div class="status-item">
+                    <h4>Version</h4>
+                    <p id="version-status">1.0.0</p>
+                </div>
             </div>
         </div>
         
         <div class="endpoints-section">
-            <h3>📡 Available API Endpoints</h3>
-            <div class="endpoint-list">
+            <h2>API Endpoints</h2>
+            
+            <div class="endpoint-group">
+                <h3>Health & Status</h3>
                 <div class="endpoint-item">
-                    <div class="endpoint-method">GET</div>
-                    <div class="endpoint-path">/health</div>
+                    <span class="endpoint-method">GET</span>
+                    <span class="endpoint-path">/health</span>
+                    <div class="endpoint-description">System health check and status information</div>
                 </div>
                 <div class="endpoint-item">
-                    <div class="endpoint-method">GET</div>
-                    <div class="endpoint-path">/api/health</div>
+                    <span class="endpoint-method">GET</span>
+                    <span class="endpoint-path">/api/health</span>
+                    <div class="endpoint-description">Detailed API health status</div>
+                </div>
+            </div>
+            
+            <div class="endpoint-group">
+                <h3>Authentication</h3>
+                <div class="endpoint-item">
+                    <span class="endpoint-method">POST</span>
+                    <span class="endpoint-path">/api/auth/register</span>
+                    <div class="endpoint-description">User registration</div>
                 </div>
                 <div class="endpoint-item">
-                    <div class="endpoint-method">POST</div>
-                    <div class="endpoint-path">/api/auth/register</div>
+                    <span class="endpoint-method">POST</span>
+                    <span class="endpoint-path">/api/auth/login</span>
+                    <div class="endpoint-description">User authentication</div>
+                </div>
+            </div>
+            
+            <div class="endpoint-group">
+                <h3>User Management</h3>
+                <div class="endpoint-item">
+                    <span class="endpoint-method">GET</span>
+                    <span class="endpoint-path">/api/user/profile</span>
+                    <div class="endpoint-description">Get user profile information</div>
+                </div>
+            </div>
+            
+            <div class="endpoint-group">
+                <h3>Call Management</h3>
+                <div class="endpoint-item">
+                    <span class="endpoint-method">GET</span>
+                    <span class="endpoint-path">/api/calls</span>
+                    <div class="endpoint-description">Get call history and status</div>
+                </div>
+            </div>
+            
+            <div class="endpoint-group">
+                <h3>Worker Management</h3>
+                <div class="endpoint-item">
+                    <span class="endpoint-method">GET</span>
+                    <span class="endpoint-path">/api/workers/status</span>
+                    <div class="endpoint-description">Get worker status</div>
                 </div>
                 <div class="endpoint-item">
-                    <div class="endpoint-method">POST</div>
-                    <div class="endpoint-path">/api/auth/login</div>
+                    <span class="endpoint-method">POST</span>
+                    <span class="endpoint-path">/api/workers/start</span>
+                    <div class="endpoint-description">Start background workers</div>
                 </div>
                 <div class="endpoint-item">
-                    <div class="endpoint-method">GET</div>
-                    <div class="endpoint-path">/api/user/profile</div>
-                </div>
-                <div class="endpoint-item">
-                    <div class="endpoint-method">GET</div>
-                    <div class="endpoint-path">/api/calls</div>
-                </div>
-                <div class="endpoint-item">
-                    <div class="endpoint-method">GET</div>
-                    <div class="endpoint-path">/api/workers/status</div>
-                </div>
-                <div class="endpoint-item">
-                    <div class="endpoint-method">POST</div>
-                    <div class="endpoint-path">/api/workers/start</div>
+                    <span class="endpoint-method">POST</span>
+                    <span class="endpoint-path">/api/workers/stop</span>
+                    <div class="endpoint-description">Stop background workers</div>
                 </div>
             </div>
         </div>
         
-        <div class="stats-section">
-            <h3>📊 System Statistics</h3>
-            <div class="stats-grid">
-                <div class="stat-item">
-                    <div class="stat-value" id="uptime">--</div>
-                    <div class="stat-label">Uptime</div>
+        <div class="info-section">
+            <h2>System Information</h2>
+            <div class="info-grid">
+                <div class="info-item">
+                    <h4>Deployment</h4>
+                    <p>Render Cloud Platform</p>
                 </div>
-                <div class="stat-item">
-                    <div class="stat-value" id="memory-usage">--</div>
-                    <div class="stat-label">Memory Usage</div>
+                <div class="info-item">
+                    <h4>Database</h4>
+                    <p>MongoDB Atlas</p>
                 </div>
-                <div class="stat-item">
-                    <div class="stat-value" id="active-connections">--</div>
-                    <div class="stat-label">Active Connections</div>
+                <div class="info-item">
+                    <h4>Framework</h4>
+                    <p>Node.js & Express</p>
                 </div>
-                <div class="stat-item">
-                    <div class="stat-value" id="requests-count">--</div>
-                    <div class="stat-label">Total Requests</div>
+                <div class="info-item">
+                    <h4>Security</h4>
+                    <p>JWT Authentication</p>
                 </div>
             </div>
         </div>
         
         <div class="footer">
-            <p>AI SDR Backend System | Powered by Node.js & Express</p>
-            <p>Deployed on Render | Database: MongoDB Atlas</p>
+            <p>AI SDR API | Production Environment | Deployed on Render</p>
+            <p>For API access and integration, contact the development team</p>
         </div>
     </div>
     
     <script>
-        // Update dashboard data
-        async function updateDashboard() {
+        // Update status information
+        async function updateStatus() {
             try {
                 const response = await fetch('/api/health');
                 const data = await response.json();
@@ -301,66 +341,42 @@ const dashboardHTML = `
                 // Update database status
                 const dbStatus = document.getElementById('db-status');
                 if (data.database && data.database.status === 'connected') {
-                    dbStatus.innerHTML = '<span class="status-indicator status-online"></span><strong>Connected</strong>';
+                    dbStatus.textContent = 'Connected';
+                    dbStatus.parentElement.style.borderLeftColor = '#28a745';
                 } else {
-                    dbStatus.innerHTML = '<span class="status-indicator status-offline"></span><strong>Disconnected</strong>';
+                    dbStatus.textContent = 'Disconnected';
+                    dbStatus.parentElement.style.borderLeftColor = '#dc3545';
                 }
                 
-                // Update stats
-                if (data.uptime) {
-                    document.getElementById('uptime').textContent = data.uptime;
-                }
-                if (data.memoryUsage) {
-                    document.getElementById('memory-usage').textContent = data.memoryUsage;
-                }
-                if (data.workers && data.workers.status) {
-                    document.getElementById('active-connections').textContent = data.workers.status;
+                // Update environment
+                const envStatus = document.getElementById('env-status');
+                if (data.environment) {
+                    envStatus.textContent = data.environment.charAt(0).toUpperCase() + data.environment.slice(1);
                 }
                 
             } catch (error) {
-                console.error('Failed to update dashboard:', error);
+                console.error('Failed to update status:', error);
             }
         }
         
-        // Update every 30 seconds
-        updateDashboard();
-        setInterval(updateDashboard, 30000);
+        // Update status on load and every 30 seconds
+        updateStatus();
+        setInterval(updateStatus, 30000);
     </script>
 </body>
 </html>
 `;
 
-// Dashboard route
+// API documentation route
 router.get('/', asyncHandler(async (req, res) => {
-  logger.info('Dashboard accessed', { 
+  logger.info('API documentation accessed', { 
     ip: req.ip, 
     userAgent: req.get('User-Agent'),
     timestamp: new Date().toISOString()
   });
   
   res.setHeader('Content-Type', 'text/html');
-  res.send(dashboardHTML);
-}));
-
-// API status endpoint for dashboard
-router.get('/api/status', asyncHandler(async (req, res) => {
-  const status = {
-    status: 'online',
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development',
-    version: '1.0.0',
-    uptime: process.uptime,
-    memoryUsage: `${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)} MB`,
-    database: {
-      status: 'connected',
-      readyState: 1
-    },
-    workers: {
-      status: 'running'
-    }
-  };
-  
-  res.json(status);
+  res.send(apiDocsHTML);
 }));
 
 module.exports = router; 
