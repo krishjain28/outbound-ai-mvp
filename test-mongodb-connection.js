@@ -8,7 +8,7 @@
 const mongoose = require('./backend/node_modules/mongoose');
 
 // Test connection string from render.yaml
-const testMongoURI = 'mongodb+srv://krishjain:Krish%40123@cluster0.v7ckm.mongodb.net/outbound-ai-mvp?retryWrites=true&w=majority';
+const testMongoURI = 'mongodb+srv://krisjainista:krisjainista@18337.3yosqwx.mongodb.net/outbound-ai-mvp?retryWrites=true&w=majority&appName=18337';
 
 console.log('🔍 Testing MongoDB Connection String...');
 console.log('Connection String:', testMongoURI.replace(/\/\/.*@/, '//***:***@'));
