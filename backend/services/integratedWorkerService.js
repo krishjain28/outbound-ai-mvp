@@ -126,4 +126,4 @@ class IntegratedWorkerService {
   }
 }
 
-module.exports = new IntegratedWorkerService();
+module.exports = IntegratedWorkerService;

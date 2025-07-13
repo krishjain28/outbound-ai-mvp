@@ -10,10 +10,19 @@ const OpenAI = require('openai');
 const speechService = require('../services/speechService');
 const conversationService = require('../services/conversationService');
 
-// Initialize OpenAI
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
+// Initialize OpenAI lazily
+let openai = null;
+function getOpenAI() {
+  if (!openai) {
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error('OPENAI_API_KEY environment variable is required');
+    }
+    openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY
+    });
+  }
+  return openai;
+}
 
 // Telnyx configuration
 const TELNYX_API_KEY = process.env.TELNYX_API_KEY;
@@ -1164,7 +1173,7 @@ CRITICAL RULES:
       });
     }
 
-    const response = await openai.chat.completions.create({
+    const response = await getOpenAI().chat.completions.create({
       model: 'gpt-4', // Use GPT-4 for more natural conversations
       messages,
       max_tokens: 80, // Even shorter for more natural flow
