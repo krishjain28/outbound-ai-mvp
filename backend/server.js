@@ -11,6 +11,10 @@ const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/user');
 const callRoutes = require('./routes/calls');
 
+// Import integrated worker service
+const IntegratedWorkerService = require('./services/integratedWorkerService');
+const integratedWorkerService = new IntegratedWorkerService();
+
 const app = express();
 
 // Trust proxy for ngrok and other reverse proxies
@@ -70,15 +74,41 @@ app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/calls', callRoutes);
 
+// Worker management endpoints
+app.get('/api/workers/status', (req, res) => {
+  const workerStatus = integratedWorkerService.getStatus();
+  res.json(workerStatus);
+});
+
+app.post('/api/workers/start', (req, res) => {
+  integratedWorkerService.start();
+  res.json({ message: 'Workers started successfully' });
+});
+
+app.post('/api/workers/stop', (req, res) => {
+  integratedWorkerService.stop();
+  res.json({ message: 'Workers stopped successfully' });
+});
+
 // Enhanced health check endpoint with monitoring data
 app.get('/health', (req, res) => {
   const healthStatus = getHealthStatus();
-  res.status(healthStatus.status === 'healthy' ? 200 : 503).json(healthStatus);
+  const workerStatus = integratedWorkerService.getStatus();
+  
+  res.status(healthStatus.status === 'healthy' ? 200 : 503).json({
+    ...healthStatus,
+    workers: workerStatus
+  });
 });
 
 app.get('/api/health', (req, res) => {
   const healthStatus = getHealthStatus();
-  res.status(healthStatus.status === 'healthy' ? 200 : 503).json(healthStatus);
+  const workerStatus = integratedWorkerService.getStatus();
+  
+  res.status(healthStatus.status === 'healthy' ? 200 : 503).json({
+    ...healthStatus,
+    workers: workerStatus
+  });
 });
 
 // Production error handling middleware
@@ -90,7 +120,43 @@ app.use('*', (req, res) => {
 });
 
 const PORT = process.env.PORT || 5001;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-}); 
+
+// Start workers when server starts
+const originalListen = app.listen;
+app.listen = function(port, callback) {
+  const server = originalListen.call(this, port, () => {
+    console.log(`Server running on port ${port}`);
+    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    
+    // Start integrated workers
+    setTimeout(() => {
+      integratedWorkerService.start();
+    }, 3000); // Wait 3 seconds for server to fully initialize
+    
+    if (callback) callback();
+  });
+  
+  // Graceful shutdown
+  process.on('SIGTERM', () => {
+    console.log('🛑 Received SIGTERM, shutting down gracefully...');
+    integratedWorkerService.stop();
+    server.close(() => {
+      console.log('✅ Server closed');
+      process.exit(0);
+    });
+  });
+  
+  process.on('SIGINT', () => {
+    console.log('🛑 Received SIGINT, shutting down gracefully...');
+    integratedWorkerService.stop();
+    server.close(() => {
+      console.log('✅ Server closed');
+      process.exit(0);
+    });
+  });
+  
+  return server;
+};
+
+app.listen(PORT);
+console.log('🔧 Integrated worker service configured'); 
