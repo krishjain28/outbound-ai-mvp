@@ -59,7 +59,6 @@ class MonitoringService {
   }
 
   getCpuUsage() {
-    const cpus = os.cpus();
     let totalIdle = 0;
     let totalTick = 0;
 

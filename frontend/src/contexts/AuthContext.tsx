@@ -13,7 +13,7 @@ import {
   LoginCredentials,
   RegisterCredentials,
 } from '../types/auth';
-import { AxiosError as AxiosErrorType } from 'axios';
+
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
