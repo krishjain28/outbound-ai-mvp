@@ -104,7 +104,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         throw new Error(response.message || 'Registration failed');
       }
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Registration failed';
+      // Improved error handling to show detailed backend messages
+      let message = 'Registration failed';
+      if (error && typeof error === 'object' && 'message' in error) {
+        if (typeof error.message === 'string') {
+          message = error.message;
+        } else if (Array.isArray(error.message)) {
+          message = error.message.join(', ');
+        }
+      }
       toast.error(message);
       throw error;
     } finally {
